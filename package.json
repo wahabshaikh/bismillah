@@ -1,0 +1,63 @@
+{
+  "name": "bismillah",
+  "version": "0.1.0",
+  "description": "Bismillah \u2014 start every build in the Name. vinext + Cloudflare Workers template with Agents, D1, R2, KV. Halal only.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wahabshaikh/bismillah.git"
+  },
+  "homepage": "https://github.com/wahabshaikh/bismillah",
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "vinext",
+    "agents",
+    "d1",
+    "r2",
+    "template",
+    "bismillah"
+  ],
+  "packageManager": "npm@10.9.3",
+  "type": "module",
+  "scripts": {
+    "dev": "vinext dev",
+    "build": "vinext build",
+    "start": "wrangler dev --config dist/server/wrangler.json",
+    "deploy": "vinext-cloudflare deploy --config dist/server/wrangler.json",
+    "db:migrate": "wrangler d1 migrations apply bismillah --local",
+    "db:migrate:remote": "wrangler d1 migrations apply bismillah --remote",
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types env.d.ts"
+  },
+  "dependencies": {
+    "@cloudflare/ai-chat": "0.1.5",
+    "@vinext/cloudflare": "^1.0.0-beta.7",
+    "agents": "0.6.0",
+    "ai": "6.0.101",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.511.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-server-dom-webpack": "^19.3.0",
+    "tailwind-merge": "^3.3.0",
+    "vinext": "^1.0.0-beta.9",
+    "workers-ai-provider": "3.1.2",
+    "zod": "^3.25.0 || ^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.7",
+    "@cloudflare/workers-types": "4.20260305.0",
+    "@tailwindcss/postcss": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-rsc": "^0.5.34",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vite": "^8.3.0",
+    "wrangler": "^4.131.0"
+  }
+}
