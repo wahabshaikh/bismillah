@@ -15,6 +15,12 @@ Guidance for coding agents working in this repo.
 - Durable Object: `ChatAgent` (`worker/chat-agent.ts`) via `@cloudflare/ai-chat` + `agents`
 - Workers AI via `workers-ai-provider`
 - D1 (`DB`), R2 (`ARTIFACTS`), KV (`KV`), separate vinext cache KV (`VINEXT_KV_CACHE`)
+- Auth: **Better Auth** only — `lib/auth.ts` `createAuth(env, request?)`, D1 native. email/password + `magicLink` plugin + Google OAuth (only when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` set) + forgot/reset. Client: `lib/auth-client.ts`. Server session helpers: `lib/session.ts`.
+- Email: **Plunk** only — transport `lib/plunk.ts` `sendTransactionalEmail` (fetch to `api.useplunk.com/v1/send`); templates in `lib/email.ts` (`sendWelcomeEmail` / `sendMagicLinkEmail` / `sendPasswordResetEmail`).
+- Payments: **Polar** only (`@polar-sh/sdk`) — `lib/polar.ts`: `createCheckoutSession` (one-time + `?type=subscription` stub), `createPortalLink`, `verifyPolarWebhook`. Halal one-time price, no riba/BNPL.
+- Rate limiting: `lib/rate-limit.ts` — fixed window on `env.KV` (never `VINEXT_KV_CACHE`); wired into `/api/auth/*` and `/api/webhooks/polar`.
+- Webhook idempotency: D1 `webhook_events(id PRIMARY KEY)` — `migrations/0003_webhook_events.sql`.
+- Site URL: `lib/site.ts` `getSiteUrl(env, request?)` — `NEXT_PUBLIC_SITE_URL` → `BETTER_AUTH_URL` → origin → `https://bismillah.wahabshaikh.workers.dev`.
 
 ## Hard rules
 
@@ -24,13 +30,40 @@ Guidance for coding agents working in this repo.
 4. Match peer patterns under `/workspace/refs/vinext-agents-example` when changing agent routing.
 5. Keep UI Tailwind + local shadcn-style primitives (`components/ui/*`).
 6. Do not invent live demo URLs or paste API keys.
+7. Auth/email/payments helpers must never crash the site when their secret is unset (demo mode).
+8. No Stripe/Clerk/Resend. No riba / BNPL / interest framing anywhere.
+9. Add D1 schema changes as new files under `migrations/` (never edit applied migrations).
 
 ## Key paths
 
 - `worker/index.ts`, `worker/chat-agent.ts`
 - `app/chat/*`, `app/demos/*`, `app/api/*`
-- `migrations/0001_init.sql`
-- `env.d.ts`, `wrangler.jsonc`
+- `lib/auth.ts`, `lib/auth-client.ts`, `lib/session.ts`, `lib/email.ts`, `lib/plunk.ts`, `lib/polar.ts`, `lib/rate-limit.ts`, `lib/site.ts`
+- Public auth: `app/login/*`, `app/signup/*`, `app/forgot-password/*`, `app/reset-password/*`
+- Gated: `app/dashboard/*`, `app/settings/*` (`requireSession`); `app/account/*` → redirects to `/dashboard`
+- Marketing/legal: `app/page.tsx`, `app/pricing/*`, `app/checkout/*`, `app/privacy/*`, `app/terms/*`
+- SEO: `app/layout.tsx` (OG), `app/sitemap.xml/route.ts`, `app/robots.txt/route.ts`
+- API: `app/api/auth/[...all]/route.ts`, `app/api/checkout/route.ts`, `app/api/portal/route.ts`, `app/api/webhooks/polar/route.ts`
+- `migrations/0001_init.sql`, `migrations/0002_better_auth.sql`, `migrations/0003_webhook_events.sql`
+- `components/theme-toggle.tsx`, `components/sign-out-button.tsx`
+- `env.d.ts`, `wrangler.jsonc`, `.dev.vars.example`
+
+## SaaS workflows
+
+- **Auth-gated page:** `const { user } = await requireSession()` (from `lib/session.ts`) + `export const dynamic = "force-dynamic"`.
+- **New transactional email:** add a helper in `lib/email.ts` calling `sendTransactionalEmail`; it is demo-safe when `PLUNK_API_KEY` is unset.
+- **New D1 table:** new `migrations/000N_*.sql` (never edit an applied migration) → `npm run db:migrate`.
+- **New webhook:** always dedupe on the provider's delivery id via `webhook_events` before side effects; rate-limit with `lib/rate-limit.ts`.
+- **Enable Google OAuth:** set `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`; the provider auto-registers and the buttons start working.
+- **Enable subscriptions:** set `POLAR_SUBSCRIPTION_PRODUCT_ID`; hit `/api/checkout?type=subscription`.
+
+## Secrets (names only — set via `wrangler secret put`; see `.dev.vars.example`)
+
+`NEXT_PUBLIC_SITE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PLUNK_API_KEY`, `PLUNK_FROM_EMAIL`,
+`POLAR_ACCESS_TOKEN`, `POLAR_PRODUCT_ID`, `POLAR_SUBSCRIPTION_PRODUCT_ID`,
+`POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`
+(all optional — features degrade to demo mode when unset).
 
 ## Commands
 

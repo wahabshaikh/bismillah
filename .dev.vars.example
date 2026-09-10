@@ -1,0 +1,30 @@
+# Bismillah — local dev secrets (placeholder names only).
+# Copy to `.dev.vars` and fill in. NEVER commit `.dev.vars`.
+# In production set each with: npx wrangler secret put <NAME>
+#
+# Every value is OPTIONAL — features degrade to demo mode when unset:
+#   - email is logged instead of sent
+#   - checkout / portal return a 503 hint
+#   - Google button shows an "unavailable" message
+
+# --- Site ---
+NEXT_PUBLIC_SITE_URL="http://localhost:5173"
+
+# --- Better Auth ---
+BETTER_AUTH_SECRET="generate-a-32+-char-random-string"
+BETTER_AUTH_URL="http://localhost:5173"
+
+# --- Google OAuth (omit both to hide the Google button) ---
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+
+# --- Plunk (transactional email) ---
+PLUNK_API_KEY="sk_..."
+PLUNK_FROM_EMAIL="hello@yourdomain.com"
+
+# --- Polar (halal one-time payments) ---
+POLAR_ACCESS_TOKEN="polar_pat_..."
+POLAR_PRODUCT_ID="your-one-time-product-id"
+POLAR_SUBSCRIPTION_PRODUCT_ID=""
+POLAR_WEBHOOK_SECRET="whsec_..."
+POLAR_SERVER="sandbox"
