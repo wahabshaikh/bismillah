@@ -12,3 +12,5 @@ next-env.d.ts
 .turbo/
 .bindings-wired
 tsconfig.tsbuildinfo
+test-results/
+playwright-report/

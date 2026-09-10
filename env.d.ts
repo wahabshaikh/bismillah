@@ -47,8 +47,11 @@ interface Env {
   /* --- P1: daily digest cron (comma-separated recipients; logs only when unset) --- */
   DIGEST_TO?: string;
 
-  /* --- P1: organizations schema flag ("true" to enable; UI later) --- */
+  /* --- P1: organizations flag ("true" to enable the /orgs UI + API) --- */
   ENABLE_ORGS?: string;
+
+  /* --- P1b: super-admin allowlist (comma-separated emails; case-insensitive) --- */
+  ADMIN_EMAILS?: string;
 }
 
 declare namespace Cloudflare {

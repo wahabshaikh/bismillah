@@ -143,8 +143,9 @@ export default function SettingsAiKeys() {
       ) : null}
       <p className="text-xs text-slate-500 dark:text-slate-400">
         Keys are encrypted with AES-GCM before they touch the database and are
-        never shown back in full. Wiring a stored key into the agent is a later
-        step — Workers AI stays the default.
+        never shown back in full. The agent chat at <code>/chat</code> uses your
+        key while you&apos;re signed in; it falls back to Workers AI if the key
+        is missing, unset, or rejected by the provider.
       </p>
     </div>
   );

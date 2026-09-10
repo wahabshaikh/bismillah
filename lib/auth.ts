@@ -10,7 +10,7 @@
  * Every email send is demo-safe: `lib/email.ts` no-ops when PLUNK_API_KEY is unset.
  */
 import { betterAuth } from "better-auth";
-import { magicLink } from "better-auth/plugins";
+import { magicLink, admin } from "better-auth/plugins";
 import {
   sendWelcomeEmail,
   sendMagicLinkEmail,
@@ -51,6 +51,12 @@ export function createAuth(env: Env, request?: Request) {
           await sendMagicLinkEmail(env, email, url);
         },
       }),
+      // Thin super-admin + impersonation. Authority is the `ADMIN_EMAILS`
+      // allowlist (see `lib/admin.ts`); `/api/admin/*` routes call
+      // `ensureAdminRole` so this plugin's permission check passes.
+      // ⚠️ impersonation = full account access. Add MFA + an audit log before
+      // relying on this in production.
+      admin({ impersonationSessionDuration: 60 * 60 }),
     ],
     databaseHooks: {
       user: {

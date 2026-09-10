@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { env } from "cloudflare:workers";
 import { requireSession } from "@/lib/session";
+import { isOrgsEnabled } from "@/lib/orgs";
+import { isSuperAdmin } from "@/lib/admin";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -15,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Dashboard" };
 
-const links = [
+const baseLinks = [
   { href: "/chat", label: "Agent chat", desc: "Workers AI + ChatAgent DO" },
   { href: "/demos", label: "Edge demos", desc: "D1 / R2 / KV" },
   { href: "/settings", label: "Settings", desc: "Profile + billing" },
@@ -24,6 +27,16 @@ const links = [
 
 export default async function DashboardPage() {
   const { user } = await requireSession();
+
+  const links = [
+    ...baseLinks,
+    ...(isOrgsEnabled(env)
+      ? [{ href: "/orgs", label: "Organizations", desc: "Teams + invites" }]
+      : []),
+    ...(isSuperAdmin(env, user.email)
+      ? [{ href: "/admin", label: "Admin", desc: "Stats + impersonation" }]
+      : []),
+  ];
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-emerald-50/80 via-slate-50 to-slate-50 px-6 py-12 text-slate-950 dark:from-emerald-950/30 dark:via-slate-950 dark:to-slate-950 dark:text-slate-100">

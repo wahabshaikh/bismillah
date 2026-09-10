@@ -26,12 +26,13 @@ Public GitHub template: [vinext](https://github.com/cloudflare/vinext) App Route
 ### P1 additions
 
 - **Onboarding checklist** on `/dashboard` after first login — D1-backed (`user_onboarding`), dismissible, `lib/onboarding.ts` + `app/api/onboarding`
-- **Bring your own AI key** in `/settings` — provider key encrypted at rest with AES-GCM (Web Crypto), only a last-4 hint is shown; `lib/user-ai-keys.ts` + `app/api/settings/ai-keys`. Workers AI stays the ChatAgent default
+- **Bring your own AI key** in `/settings` — provider key encrypted at rest with AES-GCM (Web Crypto), only a last-4 hint is shown; `lib/user-ai-keys.ts` + `app/api/settings/ai-keys`. **Wired into the agent** (`worker/chat-agent.ts`): a signed-in user with a stored OpenAI / Anthropic key gets that provider at `/chat`; everyone else (and any key that fails to decrypt or is rejected) falls back to Workers AI. The key is never logged
 - **Analytics stub** — Plausible / DataFast script, injected only when `NEXT_PUBLIC_ANALYTICS_PROVIDER` + id are set; `lib/analytics.ts` + `components/analytics.tsx`, `track(event, props?)` helper
 - **Error monitoring stub** — `lib/monitoring.ts` `captureException` / `captureMessage`; Sentry-compatible `fetch` envelope when `SENTRY_DSN` is set, structured `console.error` otherwise. `app/error.tsx` reports via `/api/monitor`
 - **Cron trigger** — `triggers.crons: ["0 9 * * *"]` → `scheduled()` in `worker/index.ts` → `lib/jobs/digest.ts` `runDailyDigest(env)` (logs a summary; emails `DIGEST_TO` via Plunk when set)
-- **Organizations schema** — `migrations/0005_orgs.sql` (`organization` / `organization_member` / `invitation`), gated by `ENABLE_ORGS`; `lib/orgs.ts` `isOrgsEnabled(env)`. Schema ready, UI later
-- **Playwright smoke skeleton** — `playwright.config.ts` + `e2e/smoke.spec.ts` (`npm run test:e2e`); tests skip when no server, never block `npm run build`
+- **Organizations (lite)** — `migrations/0005_orgs.sql` + `lib/orgs.ts`; flag-gated by `ENABLE_ORGS="true"`. When on: `/orgs` + `/orgs/[id]` (create org, list members, stub invites — roles owner/admin/member) and `app/api/orgs/*`. When off (default): pages redirect to `/dashboard`, API 404s
+- **Super-admin + impersonation** — `ADMIN_EMAILS` allowlist (`lib/admin.ts`); `/admin` page with stub stats + an impersonate-by-email/id form. Uses the Better Auth `admin` plugin (`migrations/0006_admin.sql`) via `app/api/admin/impersonate` + `/api/admin/stop-impersonate`. ⚠️ impersonation = full account access; add MFA + an audit log before production. Cannot impersonate another admin
+- **Playwright smoke** — `playwright.config.ts` + `e2e/smoke.spec.ts` + `e2e/polar-webhook.spec.ts` (mock `order.paid` + idempotent replay) (`npm run test:e2e`); tests skip when no server, never block `npm run build`
 - **Blog + changelog** — `/blog`, `/blog/[slug]`, `/changelog` from hardcoded content in `lib/blog.ts`
 
 ## Quick start
@@ -54,7 +55,7 @@ Open the app, then try `/chat`, `/demos`, `/signup`, and `/pricing`.
 | Payments | [Polar](https://polar.sh) (`@polar-sh/sdk`) | `lib/polar.ts` — `createCheckoutSession()`, `createPortalLink()`, `verifyPolarWebhook()`; routes `app/api/checkout`, `app/api/portal`, `app/api/webhooks/polar` |
 
 - **Halal only:** Polar one-time payments, fair fixed price. No interest, no BNPL/instalment framing. `?type=subscription` is a wired-but-optional stub (`POLAR_SUBSCRIPTION_PRODUCT_ID`).
-- Better Auth uses the D1 `DB` binding directly (native auto-detect). Run `npm run db:migrate` to create `user` / `session` / `account` / `verification` / `orders` (`migrations/0002_better_auth.sql`), `webhook_events` (`migrations/0003_webhook_events.sql`), `user_onboarding` + `user_ai_keys` (`migrations/0004_onboarding.sql`) and the orgs tables (`migrations/0005_orgs.sql`).
+- Better Auth uses the D1 `DB` binding directly (native auto-detect). Run `npm run db:migrate` to create `user` / `session` / `account` / `verification` / `orders` (`migrations/0002_better_auth.sql`), `webhook_events` (`migrations/0003_webhook_events.sql`), `user_onboarding` + `user_ai_keys` (`migrations/0004_onboarding.sql`), the orgs tables (`migrations/0005_orgs.sql`) and the Better Auth `admin` plugin columns (`migrations/0006_admin.sql` — nullable `role`/ban fields on `user`, `impersonatedBy` on `session`).
 - **Google OAuth** only registers when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set — otherwise the provider is omitted and the button reports it's unavailable.
 - Every helper degrades gracefully when its secret is unset — the site never crashes in demo mode (email is logged and skipped; checkout/portal return a `503` JSON hint).
 - On `order.paid` the Polar webhook records a row in D1 `orders`. Signature is verified with the Standard Webhooks scheme (Web Crypto) when `POLAR_WEBHOOK_SECRET` is set, and every delivery id is recorded in `webhook_events` so **retries are idempotent**.
@@ -84,17 +85,36 @@ npm run test:e2e   # in another terminal (first run: npx playwright install chro
 ```
 
 `e2e/smoke.spec.ts` checks the home page title, the login form, the
-`/settings` → `/login` redirect and the pricing CTA. Every test **skips** when
-no server is reachable, so it is safe to run in CI without one and it never
-gates `npm run build`. A signed Polar-webhook mock test is marked `TODO` in the
-spec.
+`/settings` → `/login` redirect and the pricing CTA. `e2e/polar-webhook.spec.ts`
+POSTs a mock `order.paid` to `/api/webhooks/polar` and asserts `{ received: true }`
+plus an idempotent `{ deduped: true }` replay (unsigned path — skips if the
+server has `POLAR_WEBHOOK_SECRET` set). Every test **skips** when no server is
+reachable, so it is safe to run in CI without one and it never gates
+`npm run build`.
 
-## Organizations (schema ready, UI later)
+## Organizations (lite, flag-gated)
 
 `migrations/0005_orgs.sql` creates thin `organization`, `organization_member`
-and `invitation` tables shaped for the Better Auth organization plugin. Nothing
-is wired up yet — `lib/orgs.ts` only exposes `isOrgsEnabled(env)` (true when
-`ENABLE_ORGS="true"`). Build the multi-tenant UI on top when you need it.
+and `invitation` tables. Set `ENABLE_ORGS="true"` to turn on the lite UI:
+`/orgs` (create + list, showing your role) and `/orgs/[id]` (members list +
+a stub invite form — no email is sent, the row is just recorded). `lib/orgs.ts`
+has the D1 helpers; `app/api/orgs/*` returns 404 when the flag is off. With the
+flag off (the default) the pages redirect to `/dashboard` — multi-tenant UX is
+never forced on a single-user fork.
+
+## Super-admin & impersonation
+
+Set `ADMIN_EMAILS` to a comma-separated allowlist (case-insensitive). Those
+users see an **Admin** card on `/dashboard` and can open `/admin`: stub stats
+and a form to impersonate any non-admin user by email or id. Impersonation is
+handled by the Better Auth `admin` plugin (`migrations/0006_admin.sql`);
+`/api/admin/impersonate` swaps your session cookie for the target's and stores
+an `admin_session` cookie, `/api/admin/stop-impersonate` restores it.
+
+> ⚠️ **RISK:** an impersonation session has full access to the target account.
+> This template ships the mechanism only. Before production: require MFA for
+> admins, write an audit-log row per impersonation, and notify the impersonated
+> user. You cannot impersonate another allowlisted admin.
 
 ### Plunk email DNS (SPF / DKIM / DMARC)
 
@@ -191,7 +211,8 @@ Copy `.dev.vars.example` → `.dev.vars` for local dev. All are optional; featur
 | `SENTRY_DSN` | Sentry ingest DSN | Sending errors to Sentry (else `console.error`) |
 | `SENTRY_ENVIRONMENT` | Environment tag for Sentry events | Labelling Sentry events |
 | `DIGEST_TO` | Comma-separated recipients for the daily digest cron | Actually sending the digest email |
-| `ENABLE_ORGS` | `"true"` to flag organizations on | Branching on the orgs schema |
+| `ENABLE_ORGS` | `"true"` to turn on the `/orgs` UI + `/api/orgs` | Organizations (lite) |
+| `ADMIN_EMAILS` | Comma-separated super-admin allowlist (case-insensitive) | `/admin` + impersonation |
 
 Set each with `npx wrangler secret put <NAME>`. Never commit `.env`, `.dev.vars`, or secret values. The Google OAuth redirect URL to register is `<origin>/api/auth/callback/google`.
 

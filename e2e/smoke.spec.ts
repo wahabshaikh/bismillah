@@ -6,9 +6,8 @@ import { test, expect } from "@playwright/test";
  * skips rather than fails — so `npm run test:e2e` is safe in CI without a
  * server and never blocks `npm run build`.
  *
- * TODO(polar-webhook): add a test that POSTs a signed mock `order.paid`
- * payload to `/api/webhooks/polar` and asserts the `orders` row + idempotent
- * replay (needs a test signing secret + a way to read D1 back).
+ * The Polar webhook receiver has its own smoke file: `e2e/polar-webhook.spec.ts`
+ * (mock `order.paid` + idempotent replay).
  */
 
 async function serverUp(request: import("@playwright/test").APIRequestContext, baseURL?: string) {

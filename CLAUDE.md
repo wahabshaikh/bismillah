@@ -60,20 +60,23 @@ Add `migrations/000N_*.sql` (never edit an applied migration). Run `npm run db:m
 | Concern | Entry point | Notes |
 |---------|-------------|-------|
 | Onboarding | `lib/onboarding.ts` + `app/api/onboarding/route.ts` | D1 `user_onboarding`; `components/onboarding-checklist.tsx` on `/dashboard`; steps `profile`/`ai_key`/`chat`/`billing` |
-| BYOK AI keys | `lib/user-ai-keys.ts` + `app/api/settings/ai-keys/route.ts` | D1 `user_ai_keys`; AES-GCM at rest (key from `AI_KEYS_ENCRYPTION_SECRET` ?? `BETTER_AUTH_SECRET`); stores ciphertext + last-4 only; **Workers AI stays the default** |
+| BYOK AI keys | `lib/user-ai-keys.ts` + `app/api/settings/ai-keys/route.ts` | D1 `user_ai_keys`; AES-GCM at rest (key from `AI_KEYS_ENCRYPTION_SECRET` ?? `BETTER_AUTH_SECRET`); stores ciphertext + last-4 only. **Wired into `worker/chat-agent.ts`**: `onConnect` resolves the Better Auth session from the WS upgrade cookies → `userId` on connection state; `onChatMessage` prefers the user's OpenAI (`@ai-sdk/openai`) / Anthropic (`@ai-sdk/anthropic`) key, with a 1-token pre-flight that falls back to `createWorkersAI` on any failure. **Workers AI stays the default** for anon users / no key / decrypt fail / provider reject. Key is never logged |
 | Analytics | `lib/analytics.ts` + `components/analytics.tsx` | mounted in `app/layout.tsx`; no-op unless `NEXT_PUBLIC_ANALYTICS_PROVIDER` + id set; `track(event, props?)` |
 | Monitoring | `lib/monitoring.ts` + `app/error.tsx` + `app/api/monitor/route.ts` | Sentry `fetch` envelope when `SENTRY_DSN` set, else `console.error`; no `@sentry/*` dep |
 | Cron | `wrangler.jsonc` `triggers.crons` + `worker/index.ts` `scheduled()` | → `lib/jobs/digest.ts` `runDailyDigest(env)`; emails `DIGEST_TO` via Plunk or logs |
-| Orgs (schema) | `migrations/0005_orgs.sql` + `lib/orgs.ts` | `isOrgsEnabled(env)` only (`ENABLE_ORGS="true"`); no UI |
+| Orgs (lite) | `migrations/0005_orgs.sql` + `lib/orgs.ts` + `app/orgs/*` + `app/api/orgs/*` | Flag-gated by `ENABLE_ORGS="true"`. Helpers: `createOrganization`/`listUserOrgs`/`getUserOrgRole`/`listOrgMembers`/`createInvitation` (roles owner/admin/member). Flag off → pages redirect `/dashboard`, API 404. Invites are D1-only stubs (no email) |
+| Super-admin | `lib/admin.ts` + `app/admin/page.tsx` + `app/api/admin/impersonate` + `/stop-impersonate` | `ADMIN_EMAILS` allowlist (case-insensitive). Better Auth `admin` plugin (`migrations/0006_admin.sql`); routes call `ensureAdminRole` so the plugin permission check passes. ⚠️ impersonation = full account access; cannot impersonate another admin; add MFA + audit log for prod |
 | Blog/changelog | `lib/blog.ts` → `app/blog/*`, `app/changelog/page.tsx` | hardcoded content, no MDX dep; slugs in sitemap |
 | E2E | `playwright.config.ts` + `e2e/smoke.spec.ts` | `npm run test:e2e`; skips without a server; never gates build |
 
 ### Don't (P1)
 
-- Don't wire a user AI key into `worker/chat-agent.ts` without keeping Workers AI as the default fallback.
+- Don't wire a user AI key into `worker/chat-agent.ts` without keeping Workers AI as the default fallback. Don't log key material (plaintext, ciphertext, or provider error bodies — some 401s echo a masked key).
 - Don't add `@sentry/*` or a heavy MDX pipeline.
 - Don't make `npm run build` depend on Playwright.
-- New D1 tables → new `migrations/000N_*.sql`; never edit `0001`–`0005`.
+- Don't render orgs UI or accept `/api/orgs*` writes when `ENABLE_ORGS !== "true"`.
+- Don't add an impersonation path without the `ADMIN_EMAILS` check + the "can't impersonate an admin" block.
+- New D1 tables/columns → new `migrations/000N_*.sql`; never edit `0001`–`0006`.
 
 ## Don't (SaaS additions)
 

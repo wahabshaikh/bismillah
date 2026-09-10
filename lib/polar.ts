@@ -193,3 +193,39 @@ export async function verifyPolarWebhook(
     return value.length > 0 && timingSafeEqual(value, expected);
   });
 }
+
+/**
+ * Test-only: produce a valid `webhook-signature` header value for a payload,
+ * so e2e can exercise the signed path. Mirrors `verifyPolarWebhook`'s scheme
+ * (`${id}.${timestamp}.${payload}` HMAC-SHA256, base64). Not used in the app.
+ */
+export async function signPolarWebhookForTest(
+  secret: string,
+  payload: string,
+  opts: { id: string; timestamp: string }
+): Promise<{ "webhook-id": string; "webhook-timestamp": string; "webhook-signature": string }> {
+  const raw = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+  let keyBuffer: ArrayBuffer;
+  try {
+    keyBuffer = base64ToBuffer(raw);
+  } catch {
+    keyBuffer = textToBuffer(raw);
+  }
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBuffer,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const mac = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    textToBuffer(`${opts.id}.${opts.timestamp}.${payload}`)
+  );
+  return {
+    "webhook-id": opts.id,
+    "webhook-timestamp": opts.timestamp,
+    "webhook-signature": `v1,${bytesToBase64(new Uint8Array(mac))}`,
+  };
+}

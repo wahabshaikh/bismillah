@@ -46,5 +46,9 @@ SENTRY_ENVIRONMENT="development"
 # --- P1: daily digest cron (comma-separated emails; logs only when unset) ---
 DIGEST_TO=""
 
-# --- P1: organizations schema flag (tables ship; UI later). "true" to enable ---
+# --- P1: organizations. "true" enables the /orgs UI + API (schema always ships) ---
 ENABLE_ORGS="false"
+
+# --- P1b: super-admin allowlist for /admin + impersonation (comma-separated) ---
+# Case-insensitive, trimmed. Leave empty to disable the admin area entirely.
+ADMIN_EMAILS=""

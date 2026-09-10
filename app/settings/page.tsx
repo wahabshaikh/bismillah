@@ -54,8 +54,9 @@ export default async function SettingsPage() {
           <CardHeader>
             <CardTitle>Bring your own AI key</CardTitle>
             <CardDescription className="dark:text-slate-400">
-              Optional. Store an encrypted provider key for later agent use.
-              Workers AI stays the default until you wire the key in.
+              Optional. When set, the agent chat at <code>/chat</code> uses your
+              provider while you&apos;re signed in. Workers AI is the fallback
+              for everyone else and whenever your key is missing or rejected.
             </CardDescription>
           </CardHeader>
           <CardContent>
