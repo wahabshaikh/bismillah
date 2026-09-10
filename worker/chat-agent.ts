@@ -20,6 +20,11 @@ export class ChatAgent extends AIChatAgent<Env> {
     onFinish: StreamTextOnFinishCallback<ToolSet>,
     options?: { abortSignal?: AbortSignal }
   ) {
+    // BYOK (P1): a user may store an encrypted provider key via
+    // `/settings` → `lib/user-ai-keys.ts` `getDecryptedUserAiKey(env, userId)`.
+    // It is intentionally NOT wired in here — Workers AI stays the default.
+    // To use it later: resolve the signed-in user id for this DO, fetch the key,
+    // and swap `model` for the matching provider's model.
     const workersai = createWorkersAI({ binding: this.env.AI });
 
     const result = streamText({

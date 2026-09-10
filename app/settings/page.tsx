@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import SignOutButton from "@/components/sign-out-button";
+import SettingsAiKeys from "@/components/settings-ai-keys";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,19 @@ export default async function SettingsPage() {
               <dt className="font-medium text-slate-500 dark:text-slate-400">User ID</dt>
               <dd className="font-mono text-xs">{user.id}</dd>
             </dl>
+          </CardContent>
+        </Card>
+
+        <Card className="dark:border-slate-800 dark:bg-slate-900">
+          <CardHeader>
+            <CardTitle>Bring your own AI key</CardTitle>
+            <CardDescription className="dark:text-slate-400">
+              Optional. Store an encrypted provider key for later agent use.
+              Workers AI stays the default until you wire the key in.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SettingsAiKeys />
           </CardContent>
         </Card>
 

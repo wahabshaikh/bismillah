@@ -22,6 +22,17 @@ Guidance for coding agents working in this repo.
 - Webhook idempotency: D1 `webhook_events(id PRIMARY KEY)` — `migrations/0003_webhook_events.sql`.
 - Site URL: `lib/site.ts` `getSiteUrl(env, request?)` — `NEXT_PUBLIC_SITE_URL` → `BETTER_AUTH_URL` → origin → `https://bismillah.wahabshaikh.workers.dev`.
 
+## P1 features
+
+- Onboarding checklist: `lib/onboarding.ts` (D1 `user_onboarding`) + `app/api/onboarding/route.ts` + `components/onboarding-checklist.tsx` on `/dashboard`. Steps: `profile`, `ai_key`, `chat`, `billing`.
+- Bring-your-own AI key: `lib/user-ai-keys.ts` — AES-GCM (Web Crypto, PBKDF2 from `AI_KEYS_ENCRYPTION_SECRET` ?? `BETTER_AUTH_SECRET`); D1 `user_ai_keys` stores ciphertext + last-4 hint only. `app/api/settings/ai-keys/route.ts` GET/PUT/DELETE. `components/settings-ai-keys.tsx` on `/settings`. **Workers AI stays the ChatAgent default** — the key is not wired into `worker/chat-agent.ts` (see the comment there).
+- Analytics: `lib/analytics.ts` `getAnalyticsConfig` / `track`; `components/analytics.tsx` in `app/layout.tsx` `<head>`. No-op unless `NEXT_PUBLIC_ANALYTICS_PROVIDER` (`plausible` | `datafast`) + id set.
+- Monitoring: `lib/monitoring.ts` `captureException` / `captureMessage` — Sentry `fetch` envelope when `SENTRY_DSN` set, else structured `console.error`. `app/error.tsx` → `app/api/monitor/route.ts`.
+- Cron: `wrangler.jsonc` `triggers.crons` + `scheduled()` in `worker/index.ts` → `lib/jobs/digest.ts` `runDailyDigest(env)`. Emails `DIGEST_TO` via Plunk when set, else logs.
+- Orgs (schema only, `ENABLE_ORGS`): `migrations/0005_orgs.sql`, `lib/orgs.ts` `isOrgsEnabled(env)`. No UI.
+- Blog/changelog: `lib/blog.ts` content arrays → `app/blog/*`, `app/changelog/page.tsx`; slugs added to `app/sitemap.xml`.
+- E2E: `playwright.config.ts` + `e2e/smoke.spec.ts`, `npm run test:e2e`. Tests skip without a server; never gate the build.
+
 ## Hard rules
 
 1. **Never overwrite binding IDs** in `wrangler.jsonc` (D1, KV ×2, R2 bucket name).
@@ -44,7 +55,9 @@ Guidance for coding agents working in this repo.
 - Marketing/legal: `app/page.tsx`, `app/pricing/*`, `app/checkout/*`, `app/privacy/*`, `app/terms/*`
 - SEO: `app/layout.tsx` (OG), `app/sitemap.xml/route.ts`, `app/robots.txt/route.ts`
 - API: `app/api/auth/[...all]/route.ts`, `app/api/checkout/route.ts`, `app/api/portal/route.ts`, `app/api/webhooks/polar/route.ts`
-- `migrations/0001_init.sql`, `migrations/0002_better_auth.sql`, `migrations/0003_webhook_events.sql`
+- `migrations/0001_init.sql` … `0005_orgs.sql` (0004 = onboarding + user AI keys, 0005 = orgs)
+- P1: `lib/onboarding.ts`, `lib/user-ai-keys.ts`, `lib/analytics.ts`, `lib/monitoring.ts`, `lib/orgs.ts`, `lib/blog.ts`, `lib/jobs/digest.ts`
+- P1 components: `components/onboarding-checklist.tsx`, `components/settings-ai-keys.tsx`, `components/analytics.tsx`; `app/error.tsx`; `app/blog/*`, `app/changelog/*`; `e2e/smoke.spec.ts`
 - `components/theme-toggle.tsx`, `components/sign-out-button.tsx`
 - `env.d.ts`, `wrangler.jsonc`, `.dev.vars.example`
 

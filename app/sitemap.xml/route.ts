@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { getSiteUrl } from "@/lib/site";
+import { BLOG_POSTS } from "@/lib/blog";
 
 /** GET /sitemap.xml — static list of public routes. */
 export function GET(request: Request) {
@@ -14,6 +15,9 @@ export function GET(request: Request) {
     "/demos",
     "/privacy",
     "/terms",
+    "/blog",
+    "/changelog",
+    ...BLOG_POSTS.map((p) => `/blog/${p.slug}`),
   ];
   const now = new Date().toISOString();
   const urls = paths

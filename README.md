@@ -23,6 +23,17 @@ Public GitHub template: [vinext](https://github.com/cloudflare/vinext) App Route
 - Tailwind + shadcn-style UI primitives
 - Typed `Env` (`env.d.ts`)
 
+### P1 additions
+
+- **Onboarding checklist** on `/dashboard` after first login — D1-backed (`user_onboarding`), dismissible, `lib/onboarding.ts` + `app/api/onboarding`
+- **Bring your own AI key** in `/settings` — provider key encrypted at rest with AES-GCM (Web Crypto), only a last-4 hint is shown; `lib/user-ai-keys.ts` + `app/api/settings/ai-keys`. Workers AI stays the ChatAgent default
+- **Analytics stub** — Plausible / DataFast script, injected only when `NEXT_PUBLIC_ANALYTICS_PROVIDER` + id are set; `lib/analytics.ts` + `components/analytics.tsx`, `track(event, props?)` helper
+- **Error monitoring stub** — `lib/monitoring.ts` `captureException` / `captureMessage`; Sentry-compatible `fetch` envelope when `SENTRY_DSN` is set, structured `console.error` otherwise. `app/error.tsx` reports via `/api/monitor`
+- **Cron trigger** — `triggers.crons: ["0 9 * * *"]` → `scheduled()` in `worker/index.ts` → `lib/jobs/digest.ts` `runDailyDigest(env)` (logs a summary; emails `DIGEST_TO` via Plunk when set)
+- **Organizations schema** — `migrations/0005_orgs.sql` (`organization` / `organization_member` / `invitation`), gated by `ENABLE_ORGS`; `lib/orgs.ts` `isOrgsEnabled(env)`. Schema ready, UI later
+- **Playwright smoke skeleton** — `playwright.config.ts` + `e2e/smoke.spec.ts` (`npm run test:e2e`); tests skip when no server, never block `npm run build`
+- **Blog + changelog** — `/blog`, `/blog/[slug]`, `/changelog` from hardcoded content in `lib/blog.ts`
+
 ## Quick start
 
 ```bash
@@ -43,13 +54,47 @@ Open the app, then try `/chat`, `/demos`, `/signup`, and `/pricing`.
 | Payments | [Polar](https://polar.sh) (`@polar-sh/sdk`) | `lib/polar.ts` — `createCheckoutSession()`, `createPortalLink()`, `verifyPolarWebhook()`; routes `app/api/checkout`, `app/api/portal`, `app/api/webhooks/polar` |
 
 - **Halal only:** Polar one-time payments, fair fixed price. No interest, no BNPL/instalment framing. `?type=subscription` is a wired-but-optional stub (`POLAR_SUBSCRIPTION_PRODUCT_ID`).
-- Better Auth uses the D1 `DB` binding directly (native auto-detect). Run `npm run db:migrate` to create `user` / `session` / `account` / `verification` / `orders` (`migrations/0002_better_auth.sql`) and `webhook_events` (`migrations/0003_webhook_events.sql`).
+- Better Auth uses the D1 `DB` binding directly (native auto-detect). Run `npm run db:migrate` to create `user` / `session` / `account` / `verification` / `orders` (`migrations/0002_better_auth.sql`), `webhook_events` (`migrations/0003_webhook_events.sql`), `user_onboarding` + `user_ai_keys` (`migrations/0004_onboarding.sql`) and the orgs tables (`migrations/0005_orgs.sql`).
 - **Google OAuth** only registers when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set — otherwise the provider is omitted and the button reports it's unavailable.
 - Every helper degrades gracefully when its secret is unset — the site never crashes in demo mode (email is logged and skipped; checkout/portal return a `503` JSON hint).
 - On `order.paid` the Polar webhook records a row in D1 `orders`. Signature is verified with the Standard Webhooks scheme (Web Crypto) when `POLAR_WEBHOOK_SECRET` is set, and every delivery id is recorded in `webhook_events` so **retries are idempotent**.
 - `/api/auth/*` and `/api/webhooks/polar` are rate-limited (fixed window) using the app `KV` namespace — never `VINEXT_KV_CACHE`.
 
-Demo paths: `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/dashboard` (protected), `/settings` (protected), `/pricing`, `/api/checkout`, `/api/portal`, `/checkout/success`, `/api/webhooks/polar`, `/privacy`, `/terms`, `/sitemap.xml`, `/robots.txt`.
+Demo paths: `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/dashboard` (protected), `/settings` (protected), `/pricing`, `/api/checkout`, `/api/portal`, `/checkout/success`, `/api/webhooks/polar`, `/privacy`, `/terms`, `/sitemap.xml`, `/robots.txt`, `/blog`, `/changelog`, `/api/onboarding`, `/api/settings/ai-keys`, `/api/monitor`.
+
+## Cron triggers
+
+`wrangler.jsonc` declares `triggers.crons: ["0 9 * * *"]` (09:00 UTC daily). The
+Worker's `scheduled()` handler (`worker/index.ts`) calls
+`runDailyDigest(env)` from `lib/jobs/digest.ts`, which reads a couple of safe
+demo counts from D1 and either logs a summary or — when `DIGEST_TO` is set —
+emails it via Plunk. Add more cron expressions to the array and branch on
+`controller.cron`. Test locally with:
+
+```bash
+npx wrangler dev --test-scheduled
+# then: curl "http://localhost:8787/__scheduled?cron=0+9+*+*+*"
+```
+
+## End-to-end smoke tests
+
+```bash
+npm run dev        # serves http://127.0.0.1:5173
+npm run test:e2e   # in another terminal (first run: npx playwright install chromium)
+```
+
+`e2e/smoke.spec.ts` checks the home page title, the login form, the
+`/settings` → `/login` redirect and the pricing CTA. Every test **skips** when
+no server is reachable, so it is safe to run in CI without one and it never
+gates `npm run build`. A signed Polar-webhook mock test is marked `TODO` in the
+spec.
+
+## Organizations (schema ready, UI later)
+
+`migrations/0005_orgs.sql` creates thin `organization`, `organization_member`
+and `invitation` tables shaped for the Better Auth organization plugin. Nothing
+is wired up yet — `lib/orgs.ts` only exposes `isOrgsEnabled(env)` (true when
+`ENABLE_ORGS="true"`). Build the multi-tenant UI on top when you need it.
 
 ### Plunk email DNS (SPF / DKIM / DMARC)
 
@@ -75,6 +120,7 @@ Set `PLUNK_FROM_EMAIL` to an address on the authenticated domain. Verify in Plun
 | `npm run db:migrate:remote` | Apply D1 migrations to remote |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run types` | Regenerate types with `wrangler types` |
+| `npm run test:e2e` | Playwright smoke tests (optional; needs a running server) |
 
 ## Bindings (do not overwrite IDs)
 
@@ -137,6 +183,15 @@ Copy `.dev.vars.example` → `.dev.vars` for local dev. All are optional; featur
 | `POLAR_SUBSCRIPTION_PRODUCT_ID` | Polar recurring product id (optional stub) | `/api/checkout?type=subscription` |
 | `POLAR_WEBHOOK_SECRET` | Polar webhook signing secret (`whsec_...`) | Verifying `/api/webhooks/polar` |
 | `POLAR_SERVER` | `sandbox` or `production` (defaults to `production`) | Using the Polar sandbox |
+| `AI_KEYS_ENCRYPTION_SECRET` | Key for encrypting stored user AI keys (falls back to `BETTER_AUTH_SECRET`) | Rotating the BYOK encryption key independently |
+| `NEXT_PUBLIC_ANALYTICS_PROVIDER` | `plausible` or `datafast` | Loading an analytics script |
+| `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` | Plausible site domain | Plausible analytics |
+| `NEXT_PUBLIC_DATAFAST_WEBSITE_ID` | DataFast website id | DataFast analytics |
+| `NEXT_PUBLIC_DATAFAST_DOMAIN` | DataFast site domain (optional) | DataFast analytics |
+| `SENTRY_DSN` | Sentry ingest DSN | Sending errors to Sentry (else `console.error`) |
+| `SENTRY_ENVIRONMENT` | Environment tag for Sentry events | Labelling Sentry events |
+| `DIGEST_TO` | Comma-separated recipients for the daily digest cron | Actually sending the digest email |
+| `ENABLE_ORGS` | `"true"` to flag organizations on | Branching on the orgs schema |
 
 Set each with `npx wrangler secret put <NAME>`. Never commit `.env`, `.dev.vars`, or secret values. The Google OAuth redirect URL to register is `<origin>/api/auth/callback/google`.
 

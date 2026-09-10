@@ -30,6 +30,25 @@ interface Env {
   POLAR_PRODUCT_ID?: string;
   POLAR_SUBSCRIPTION_PRODUCT_ID?: string;
   POLAR_SERVER?: "sandbox" | "production";
+
+  /* --- P1: bring-your-own AI key encryption (falls back to BETTER_AUTH_SECRET) --- */
+  AI_KEYS_ENCRYPTION_SECRET?: string;
+
+  /* --- P1: privacy-friendly analytics (all no-op unless provider + id set) --- */
+  NEXT_PUBLIC_ANALYTICS_PROVIDER?: "plausible" | "datafast";
+  NEXT_PUBLIC_PLAUSIBLE_DOMAIN?: string;
+  NEXT_PUBLIC_DATAFAST_WEBSITE_ID?: string;
+  NEXT_PUBLIC_DATAFAST_DOMAIN?: string;
+
+  /* --- P1: error monitoring (Sentry-compatible; console fallback when unset) --- */
+  SENTRY_DSN?: string;
+  SENTRY_ENVIRONMENT?: string;
+
+  /* --- P1: daily digest cron (comma-separated recipients; logs only when unset) --- */
+  DIGEST_TO?: string;
+
+  /* --- P1: organizations schema flag ("true" to enable; UI later) --- */
+  ENABLE_ORGS?: string;
 }
 
 declare namespace Cloudflare {

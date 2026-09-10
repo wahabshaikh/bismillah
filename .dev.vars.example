@@ -28,3 +28,23 @@ POLAR_PRODUCT_ID="your-one-time-product-id"
 POLAR_SUBSCRIPTION_PRODUCT_ID=""
 POLAR_WEBHOOK_SECRET="whsec_..."
 POLAR_SERVER="sandbox"
+
+# --- P1: bring-your-own AI key encryption (optional; falls back to BETTER_AUTH_SECRET) ---
+AI_KEYS_ENCRYPTION_SECRET=""
+
+# --- P1: privacy-friendly analytics (no-op unless provider + id set) ---
+# provider is "plausible" or "datafast"
+NEXT_PUBLIC_ANALYTICS_PROVIDER=""
+NEXT_PUBLIC_PLAUSIBLE_DOMAIN=""
+NEXT_PUBLIC_DATAFAST_WEBSITE_ID=""
+NEXT_PUBLIC_DATAFAST_DOMAIN=""
+
+# --- P1: error monitoring (no-op console fallback unless SENTRY_DSN set) ---
+SENTRY_DSN=""
+SENTRY_ENVIRONMENT="development"
+
+# --- P1: daily digest cron (comma-separated emails; logs only when unset) ---
+DIGEST_TO=""
+
+# --- P1: organizations schema flag (tables ship; UI later). "true" to enable ---
+ENABLE_ORGS="false"

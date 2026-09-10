@@ -57,5 +57,8 @@
       "tag": "v1",
       "new_sqlite_classes": ["ChatAgent"]
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["0 9 * * *"]
+  }
 }

@@ -14,5 +14,30 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npm run typecheck
+
+  # Optional, non-blocking. Boots the built Worker and runs the Playwright
+  # smoke skeleton. Marked continue-on-error so it never gates a merge; the
+  # smoke tests also self-skip if the server is unreachable.
+  e2e:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Start Worker and run smoke tests
+        run: |
+          npx wrangler dev --config dist/server/wrangler.json --port 5173 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:5173/ >/dev/null && break || sleep 2
+          done
+          npm run test:e2e
+        env:
+          E2E_BASE_URL: http://127.0.0.1:5173

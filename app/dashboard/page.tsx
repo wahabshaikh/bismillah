@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import SignOutButton from "@/components/sign-out-button";
+import OnboardingChecklist from "@/components/onboarding-checklist";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,8 @@ export default async function DashboardPage() {
           </Link>
           <SignOutButton />
         </div>
+
+        <OnboardingChecklist />
 
         <Card className="dark:border-slate-800 dark:bg-slate-900">
           <CardHeader>

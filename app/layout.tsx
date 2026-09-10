@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { env } from "cloudflare:workers";
 import { getSiteUrl } from "@/lib/site";
+import { Analytics } from "@/components/analytics";
 import "./globals.css";
 
 /** Runs before paint to apply the saved theme (no flash of wrong theme). */
@@ -57,6 +58,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <Analytics />
       </head>
       <body>{children}</body>
     </html>

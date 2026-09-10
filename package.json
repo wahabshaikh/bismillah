@@ -28,7 +28,8 @@
     "db:migrate": "wrangler d1 migrations apply bismillah --local",
     "db:migrate:remote": "wrangler d1 migrations apply bismillah --remote",
     "typecheck": "tsc --noEmit",
-    "types": "wrangler types env.d.ts"
+    "types": "wrangler types env.d.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.283",
@@ -52,12 +53,14 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.54.7",
     "@cloudflare/workers-types": "4.20260305.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "^6.1.1",
     "@vitejs/plugin-rsc": "^0.5.34",
+    "playwright": "^1.63.0",
     "tailwindcss": "latest",
     "typescript": "latest",
     "vite": "^8.3.0",
