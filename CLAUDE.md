@@ -76,7 +76,24 @@ Add `migrations/000N_*.sql` (never edit an applied migration). Run `npm run db:m
 - Don't make `npm run build` depend on Playwright.
 - Don't render orgs UI or accept `/api/orgs*` writes when `ENABLE_ORGS !== "true"`.
 - Don't add an impersonation path without the `ADMIN_EMAILS` check + the "can't impersonate an admin" block.
-- New D1 tables/columns → new `migrations/000N_*.sql`; never edit `0001`–`0006`.
+- New D1 tables/columns → new `migrations/000N_*.sql`; never edit `0001`–`0007`.
+
+## P2 layer
+
+| Concern | Entry point | Notes |
+|---------|-------------|-------|
+| Waitlist | `lib/waitlist.ts` + `app/api/waitlist/route.ts` + `/waitlist` + `components/waitlist-form.tsx` | D1 `waitlist` (`migrations/0007_p2.sql`). `joinWaitlist` lowercases/trims, shape-checks, UNIQUE conflict → `{ ok: true, already: true }` (never leaks new-vs-existing), swallows D1 errors. POST rate-limited via `env.KV` (8/min). Always attempts `sendWaitlistConfirmEmail`; owner ping via `sendWaitlistOwnerEmail` when `WAITLIST_NOTIFY_EMAIL` set. Email failure never fails the join |
+| Docs / help center | `lib/docs.ts` → `app/docs/*` | Hardcoded arrays like `lib/blog.ts`. No MDX, no i18n. Pages: getting-started, auth, email-and-payments, agents-and-api, bindings. Slugs in `app/sitemap.xml` |
+| Usage metering (display-only) | `lib/usage.ts` + `app/api/usage/route.ts` + `components/settings-usage.tsx` on `/settings` | D1 `usage_events`. `recordUsage` / `getUsageSummary` (units this month for `agent_tokens`, `MONTHLY_ALLOWANCE` = 10000). `ingestPolarUsage` is a **documented no-op** — never hits Polar's events API here. "Record demo unit" button POSTs `/api/usage` (session-gated, rate-limited). Halal: prepaid/fair metered credits, no riba/BNPL |
+| Product API (agents) | `lib/product-api.ts` + `app/api/v1/{health,notes}/route.ts` | REST is the agent surface (no MCP SDK dep). `GET /api/v1/health` open; `GET|POST /api/v1/notes` gated by `Authorization: Bearer <PRODUCT_API_KEY>` when set, open/demo when unset. CORS `*` + `OPTIONS` preflight. Writes rate-limited via `env.KV`. See AGENTS.md "Product API (agents)" |
+
+### Don't (P2)
+
+- Don't add an i18n library or an MCP SDK dependency. Docs stay hardcoded in `lib/docs.ts`; the agent surface stays REST `/api/v1`.
+- Don't make `ingestPolarUsage` actually call Polar — it's a logging no-op with the wiring documented in comments.
+- Don't let `/api/waitlist` fail the join when an email send fails, and don't reveal whether an address was already on the list.
+- Don't skip the `PRODUCT_API_KEY` bearer check on `/api/v1/notes` when the key is set.
+- New D1 tables/columns → new `migrations/000N_*.sql`; never edit `0001`–`0007`.
 
 ## Don't (SaaS additions)
 

@@ -52,3 +52,12 @@ ENABLE_ORGS="false"
 # --- P1b: super-admin allowlist for /admin + impersonation (comma-separated) ---
 # Case-insensitive, trimmed. Leave empty to disable the admin area entirely.
 ADMIN_EMAILS=""
+
+# --- P2: waitlist owner ping (optional). Joiner confirmation always attempts. ---
+WAITLIST_NOTIFY_EMAIL=""
+
+# --- P2: Polar meter id for the documented usage-ingest hook (stub; no-op) ---
+POLAR_METER_ID=""
+
+# --- P2: bearer key for the REST product API (/api/v1). Open/demo when unset. ---
+PRODUCT_API_KEY=""

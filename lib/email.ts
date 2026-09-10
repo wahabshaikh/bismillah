@@ -56,3 +56,31 @@ export function sendPasswordResetEmail(env: EmailEnv, to: string, url: string) {
     ),
   });
 }
+
+/** Sent to the person who just joined the pre-launch waitlist. Demo-safe. */
+export function sendWaitlistConfirmEmail(env: EmailEnv, to: string, name?: string) {
+  return sendTransactionalEmail(env, {
+    to,
+    subject: `You're on the ${BRAND} waitlist`,
+    body: wrap(
+      `<p>Assalamu alaikum ${name || "and thank you"},</p><p>You're on the ${BRAND} waitlist — we'll be in touch before launch, in shaa Allah. Start every build in the Name.</p><p style="font-size:13px;color:#64748b">Already have an invite? You can sign up any time.</p>`
+    ),
+  });
+}
+
+/** Optional owner ping when `WAITLIST_NOTIFY_EMAIL` is set. Demo-safe. */
+export function sendWaitlistOwnerEmail(
+  env: EmailEnv,
+  to: string,
+  joiner: { email: string; name?: string | null; total?: number }
+) {
+  return sendTransactionalEmail(env, {
+    to,
+    subject: `New ${BRAND} waitlist signup`,
+    body: wrap(
+      `<p>New waitlist signup:</p><p><strong>${joiner.name || "—"}</strong> &lt;${joiner.email}&gt;</p>${
+        joiner.total ? `<p style="font-size:13px;color:#64748b">Total on the list: ${joiner.total}</p>` : ""
+      }`
+    ),
+  });
+}

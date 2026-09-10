@@ -21,7 +21,9 @@ const navLinks = [
   { href: "/pricing", label: "Pricing" },
   { href: "/chat", label: "Chat" },
   { href: "/demos", label: "Demos" },
+  { href: "/docs", label: "Docs" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/waitlist", label: "Waitlist" },
   { href: "/login", label: "Login" },
   { href: "/signup", label: "Signup" },
 ];
@@ -302,7 +304,16 @@ export default function Home() {
 
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
           <span>Bismillah · MIT · Halal only</span>
-          <span className="flex gap-4">
+          <span className="flex flex-wrap gap-4">
+            <Link href="/docs" className="hover:underline">
+              Docs
+            </Link>
+            <Link href="/waitlist" className="hover:underline">
+              Waitlist
+            </Link>
+            <Link href="/blog" className="hover:underline">
+              Blog
+            </Link>
             <Link href="/privacy" className="hover:underline">
               Privacy
             </Link>

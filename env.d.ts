@@ -52,6 +52,15 @@ interface Env {
 
   /* --- P1b: super-admin allowlist (comma-separated emails; case-insensitive) --- */
   ADMIN_EMAILS?: string;
+
+  /* --- P2: waitlist owner ping (optional; joiner confirm always attempts) --- */
+  WAITLIST_NOTIFY_EMAIL?: string;
+
+  /* --- P2: Polar meter id for the documented usage-ingest hook (stub; no-op unless set with POLAR_ACCESS_TOKEN) --- */
+  POLAR_METER_ID?: string;
+
+  /* --- P2: bearer key for the REST product API (/api/v1); open/demo when unset --- */
+  PRODUCT_API_KEY?: string;
 }
 
 declare namespace Cloudflare {

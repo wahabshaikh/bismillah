@@ -6,6 +6,12 @@ Public GitHub template: [vinext](https://github.com/cloudflare/vinext) App Route
 
 [![Typecheck](https://github.com/wahabshaikh/bismillah/actions/workflows/typecheck.yml/badge.svg)](https://github.com/wahabshaikh/bismillah/actions/workflows/typecheck.yml)
 
+## Why Bismillah wins
+
+- **Cloudflare-native, end to end.** The only top-tier starter that runs the whole stack on Cloudflare — vinext on Workers, D1 for SQL, R2 for objects, KV for cache and rate limits, Durable Object agents, and Workers AI — *and* ships Better Auth + Plunk + Polar wired in. No Vercel, no external Postgres, no database to provision.
+- **ShipFast speed, production guts.** A fork-and-deploy marketing + auth + billing surface like ShipFast, on top of the production internals you'd expect from Supastarter / Makerkit (idempotent webhooks, rate limiting, encrypted BYOK keys, onboarding, orgs, super-admin), plus zero-trust-shaped agentic AI.
+- **Halal only.** One-time fair pricing through Polar — no riba, no interest, no BNPL or instalment framing anywhere. Every vendor is locked and every integration degrades to a safe demo mode when its secret is unset.
+
 ## Features
 
 - Custom Worker entry with `ChatAgent` Durable Object (`/agents/*`)
@@ -35,6 +41,13 @@ Public GitHub template: [vinext](https://github.com/cloudflare/vinext) App Route
 - **Playwright smoke** — `playwright.config.ts` + `e2e/smoke.spec.ts` + `e2e/polar-webhook.spec.ts` (mock `order.paid` + idempotent replay) (`npm run test:e2e`); tests skip when no server, never block `npm run build`
 - **Blog + changelog** — `/blog`, `/blog/[slug]`, `/changelog` from hardcoded content in `lib/blog.ts`
 
+### P2 additions
+
+- **Waitlist** — public `/waitlist` capture (`components/waitlist-form.tsx` + `app/api/waitlist`), D1 `waitlist` table, rate-limited via `env.KV`. Always attempts a joiner confirmation email; pings `WAITLIST_NOTIFY_EMAIL` when set. Both demo-safe; a send failure never fails the join. `lib/waitlist.ts` never leaks whether an address was new
+- **Docs / help center** — `/docs` + `/docs/[slug]` from hardcoded content in `lib/docs.ts` (no MDX, no i18n): getting-started, auth, email-and-payments, agents-and-api, bindings. Slugs added to the sitemap
+- **Usage metering stub** — display-only "Usage this month" card on `/settings` over local D1 `usage_events` counts (`lib/usage.ts`). "Record demo unit" button → `/api/usage` (session-gated, rate-limited). `ingestPolarUsage` is a documented no-op showing where to forward events to Polar Events/Meters (prepaid metered credits — no riba/BNPL); it does not call Polar
+- **Product API for agents** — REST `/api/v1`: `GET /api/v1/health`, `GET|POST /api/v1/notes`. CORS `*` + `OPTIONS` preflight via `lib/product-api.ts`. Optional `Authorization: Bearer <PRODUCT_API_KEY>` gate on `/notes` (open/demo when unset); writes rate-limited via `env.KV`. An MCP server can wrap these REST tools later — see AGENTS.md
+
 ## Quick start
 
 ```bash
@@ -55,7 +68,7 @@ Open the app, then try `/chat`, `/demos`, `/signup`, and `/pricing`.
 | Payments | [Polar](https://polar.sh) (`@polar-sh/sdk`) | `lib/polar.ts` — `createCheckoutSession()`, `createPortalLink()`, `verifyPolarWebhook()`; routes `app/api/checkout`, `app/api/portal`, `app/api/webhooks/polar` |
 
 - **Halal only:** Polar one-time payments, fair fixed price. No interest, no BNPL/instalment framing. `?type=subscription` is a wired-but-optional stub (`POLAR_SUBSCRIPTION_PRODUCT_ID`).
-- Better Auth uses the D1 `DB` binding directly (native auto-detect). Run `npm run db:migrate` to create `user` / `session` / `account` / `verification` / `orders` (`migrations/0002_better_auth.sql`), `webhook_events` (`migrations/0003_webhook_events.sql`), `user_onboarding` + `user_ai_keys` (`migrations/0004_onboarding.sql`), the orgs tables (`migrations/0005_orgs.sql`) and the Better Auth `admin` plugin columns (`migrations/0006_admin.sql` — nullable `role`/ban fields on `user`, `impersonatedBy` on `session`).
+- Better Auth uses the D1 `DB` binding directly (native auto-detect). Run `npm run db:migrate` to create `user` / `session` / `account` / `verification` / `orders` (`migrations/0002_better_auth.sql`), `webhook_events` (`migrations/0003_webhook_events.sql`), `user_onboarding` + `user_ai_keys` (`migrations/0004_onboarding.sql`), the orgs tables (`migrations/0005_orgs.sql`), the Better Auth `admin` plugin columns (`migrations/0006_admin.sql` — nullable `role`/ban fields on `user`, `impersonatedBy` on `session`) and the P2 `waitlist` + `usage_events` tables (`migrations/0007_p2.sql`).
 - **Google OAuth** only registers when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set — otherwise the provider is omitted and the button reports it's unavailable.
 - Every helper degrades gracefully when its secret is unset — the site never crashes in demo mode (email is logged and skipped; checkout/portal return a `503` JSON hint).
 - On `order.paid` the Polar webhook records a row in D1 `orders`. Signature is verified with the Standard Webhooks scheme (Web Crypto) when `POLAR_WEBHOOK_SECRET` is set, and every delivery id is recorded in `webhook_events` so **retries are idempotent**.
@@ -213,6 +226,9 @@ Copy `.dev.vars.example` → `.dev.vars` for local dev. All are optional; featur
 | `DIGEST_TO` | Comma-separated recipients for the daily digest cron | Actually sending the digest email |
 | `ENABLE_ORGS` | `"true"` to turn on the `/orgs` UI + `/api/orgs` | Organizations (lite) |
 | `ADMIN_EMAILS` | Comma-separated super-admin allowlist (case-insensitive) | `/admin` + impersonation |
+| `WAITLIST_NOTIFY_EMAIL` | Owner address for a "new signup" ping from `/api/waitlist` (joiner confirmation always attempts) | Owner notification on waitlist joins |
+| `POLAR_METER_ID` | Polar Meter id for the documented `ingestPolarUsage` hook (no-op stub unless set with `POLAR_ACCESS_TOKEN`) | Wiring the usage stub to Polar Events/Meters later |
+| `PRODUCT_API_KEY` | Bearer key required by `/api/v1/notes` (health stays open); the surface is open/demo when unset | Locking the REST product API |
 
 Set each with `npx wrangler secret put <NAME>`. Never commit `.env`, `.dev.vars`, or secret values. The Google OAuth redirect URL to register is `<origin>/api/auth/callback/google`.
 

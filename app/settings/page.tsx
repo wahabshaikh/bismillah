@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { env } from "cloudflare:workers";
 import { requireSession } from "@/lib/session";
+import { getUsageSummary } from "@/lib/usage";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -10,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import SignOutButton from "@/components/sign-out-button";
 import SettingsAiKeys from "@/components/settings-ai-keys";
+import SettingsUsage from "@/components/settings-usage";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +23,7 @@ const linkCls =
 
 export default async function SettingsPage() {
   const { user } = await requireSession();
+  const usage = await getUsageSummary(env, user.id);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-emerald-50/80 via-slate-50 to-slate-50 px-6 py-12 text-slate-950 dark:from-emerald-950/30 dark:via-slate-950 dark:to-slate-950 dark:text-slate-100">
@@ -61,6 +65,19 @@ export default async function SettingsPage() {
           </CardHeader>
           <CardContent>
             <SettingsAiKeys />
+          </CardContent>
+        </Card>
+
+        <Card className="dark:border-slate-800 dark:bg-slate-900">
+          <CardHeader>
+            <CardTitle>Usage this month</CardTitle>
+            <CardDescription className="dark:text-slate-400">
+              Display-only stub over local D1 counts — not live Polar billing.
+              Prepaid, fair metered credits; never interest or BNPL.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SettingsUsage initial={usage} />
           </CardContent>
         </Card>
 

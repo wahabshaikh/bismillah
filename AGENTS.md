@@ -34,6 +34,13 @@ Guidance for coding agents working in this repo.
 - Blog/changelog: `lib/blog.ts` content arrays → `app/blog/*`, `app/changelog/page.tsx`; slugs added to `app/sitemap.xml`.
 - E2E: `playwright.config.ts` + `e2e/smoke.spec.ts` + `e2e/polar-webhook.spec.ts` (mock `order.paid` + dedupe replay; `signPolarWebhookForTest` in `lib/polar.ts`), `npm run test:e2e`. Tests skip without a server; never gate the build.
 
+## P2 features
+
+- Waitlist: `lib/waitlist.ts` (`joinWaitlist` — lowercase/trim, shape check, UNIQUE conflict → `{ ok: true, already: true }`, D1 errors swallowed) + `app/api/waitlist/route.ts` (rate-limited via `env.KV`, 8/min) + `/waitlist` page + `components/waitlist-form.tsx`. D1 `waitlist` (`migrations/0007_p2.sql`). Always attempts `sendWaitlistConfirmEmail`; pings `WAITLIST_NOTIFY_EMAIL` via `sendWaitlistOwnerEmail` when set. Email failure never fails the join.
+- Docs/help center: `lib/docs.ts` hardcoded arrays → `app/docs/*` (mirrors `app/blog/*`). No MDX, no i18n. Slugs in `app/sitemap.xml`.
+- Usage metering (display-only): `lib/usage.ts` — `recordUsage` (D1 `usage_events`), `getUsageSummary` (units this month for `agent_tokens`, `MONTHLY_ALLOWANCE` constant), `ingestPolarUsage` (documented **no-op** — do not hit Polar's events API in this slice). `app/api/usage/route.ts` (session-gated, rate-limited). `components/settings-usage.tsx` card on `/settings` with a "Record demo unit" button. Halal: prepaid/fair metered credits, never riba/BNPL/subscription pressure.
+- Product API (agents): REST `/api/v1` — see the section below. No MCP SDK dependency.
+
 ## Hard rules
 
 1. **Never overwrite binding IDs** in `wrangler.jsonc` (D1, KV ×2, R2 bucket name).
@@ -45,6 +52,8 @@ Guidance for coding agents working in this repo.
 7. Auth/email/payments helpers must never crash the site when their secret is unset (demo mode).
 8. No Stripe/Clerk/Resend. No riba / BNPL / interest framing anywhere.
 9. Add D1 schema changes as new files under `migrations/` (never edit applied migrations).
+10. No i18n library and no MCP SDK dependency (P2 scope): docs are hardcoded in `lib/docs.ts`; the agent surface is REST `/api/v1`, which an MCP server can wrap later.
+11. `ingestPolarUsage` must stay a logging no-op — do not call Polar's events API from this template.
 
 ## Key paths
 
@@ -55,10 +64,12 @@ Guidance for coding agents working in this repo.
 - Gated: `app/dashboard/*`, `app/settings/*` (`requireSession`); `app/admin/*` (`requireSuperAdmin`); `app/orgs/*` (`requireSession` + `ENABLE_ORGS`); `app/account/*` → redirects to `/dashboard`
 - Marketing/legal: `app/page.tsx`, `app/pricing/*`, `app/checkout/*`, `app/privacy/*`, `app/terms/*`
 - SEO: `app/layout.tsx` (OG), `app/sitemap.xml/route.ts`, `app/robots.txt/route.ts`
-- API: `app/api/auth/[...all]/route.ts`, `app/api/checkout/route.ts`, `app/api/portal/route.ts`, `app/api/webhooks/polar/route.ts`, `app/api/admin/{impersonate,stop-impersonate}/route.ts`, `app/api/orgs/route.ts`, `app/api/orgs/[id]/invite/route.ts`
-- `migrations/0001_init.sql` … `0006_admin.sql` (0004 = onboarding + user AI keys, 0005 = orgs, 0006 = Better Auth `admin` plugin columns)
+- API: `app/api/auth/[...all]/route.ts`, `app/api/checkout/route.ts`, `app/api/portal/route.ts`, `app/api/webhooks/polar/route.ts`, `app/api/admin/{impersonate,stop-impersonate}/route.ts`, `app/api/orgs/route.ts`, `app/api/orgs/[id]/invite/route.ts`, `app/api/waitlist/route.ts`, `app/api/usage/route.ts`, `app/api/v1/{health,notes}/route.ts`
+- `migrations/0001_init.sql` … `0007_p2.sql` (0004 = onboarding + user AI keys, 0005 = orgs, 0006 = Better Auth `admin` plugin columns, 0007 = P2 `waitlist` + `usage_events`)
 - P1: `lib/onboarding.ts`, `lib/user-ai-keys.ts`, `lib/admin.ts`, `lib/analytics.ts`, `lib/monitoring.ts`, `lib/orgs.ts`, `lib/blog.ts`, `lib/jobs/digest.ts`
+- P2: `lib/waitlist.ts`, `lib/docs.ts`, `lib/usage.ts`, `lib/product-api.ts`; `app/waitlist/*`, `app/docs/*`
 - P1 components: `components/onboarding-checklist.tsx`, `components/settings-ai-keys.tsx`, `components/analytics.tsx`; `app/error.tsx`; `app/blog/*`, `app/changelog/*`; `e2e/smoke.spec.ts`
+- P2 components: `components/waitlist-form.tsx`, `components/settings-usage.tsx`
 - `components/theme-toggle.tsx`, `components/sign-out-button.tsx`
 - `env.d.ts`, `wrangler.jsonc`, `.dev.vars.example`
 
@@ -71,12 +82,35 @@ Guidance for coding agents working in this repo.
 - **Enable Google OAuth:** set `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`; the provider auto-registers and the buttons start working.
 - **Enable subscriptions:** set `POLAR_SUBSCRIPTION_PRODUCT_ID`; hit `/api/checkout?type=subscription`.
 
+## Product API (agents)
+
+REST surface for agents. `lib/product-api.ts` provides `jsonWithCors` / `corsPreflight` / `requireProductApiKey`.
+
+- **Base:** `/api/v1`
+- **Endpoints:**
+  - `GET /api/v1/health` → `{ ok: true, name: "bismillah", version: "0.1.0" }` — always open.
+  - `GET /api/v1/notes` → `{ notes }` (same shape as `/api/notes`).
+  - `POST /api/v1/notes` → body `{ title, body? }` → `{ note }` (201). Rate-limited via `env.KV`.
+  - `OPTIONS` on both routes → CORS preflight (`Access-Control-Allow-Origin: *`).
+- **Auth:** when `PRODUCT_API_KEY` is set, `/api/v1/notes` requires `Authorization: Bearer <PRODUCT_API_KEY>` (401 otherwise). When unset, the surface is **open (demo)**. Health is always open.
+- **Examples:**
+  ```bash
+  curl https://your.workers.dev/api/v1/health
+  curl -H "Authorization: Bearer $PRODUCT_API_KEY" https://your.workers.dev/api/v1/notes
+  curl -X POST https://your.workers.dev/api/v1/notes \
+    -H "Authorization: Bearer $PRODUCT_API_KEY" -H "Content-Type: application/json" \
+    -d '{"title":"from an agent","body":"hello"}'
+  ```
+- A Model Context Protocol server can wrap these REST tools later; this template ships the REST surface first so any agent can call it without an MCP SDK.
+
 ## Secrets (names only — set via `wrangler secret put`; see `.dev.vars.example`)
 
 `NEXT_PUBLIC_SITE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PLUNK_API_KEY`, `PLUNK_FROM_EMAIL`,
 `POLAR_ACCESS_TOKEN`, `POLAR_PRODUCT_ID`, `POLAR_SUBSCRIPTION_PRODUCT_ID`,
-`POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`
+`POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`, `AI_KEYS_ENCRYPTION_SECRET`,
+`SENTRY_DSN`, `DIGEST_TO`, `ENABLE_ORGS`, `ADMIN_EMAILS`,
+`WAITLIST_NOTIFY_EMAIL`, `POLAR_METER_ID`, `PRODUCT_API_KEY`
 (all optional — features degrade to demo mode when unset).
 
 ## Commands
