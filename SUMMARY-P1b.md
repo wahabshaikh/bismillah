@@ -159,5 +159,5 @@ README.md / CLAUDE.md / AGENTS.md             (docs)
 
 ## Push
 
-Commit + push to `origin/main` (`wahabshaikh/bismillah`) — see the push SHA
-printed after `git push` (`SUMMARY-P1b.md` is part of that commit).
+Commit + push to `origin/main` (`wahabshaikh/bismillah`):
+`38696c825b87a0469b14b2206a2f605e4a1f421e` (`38696c8`).
