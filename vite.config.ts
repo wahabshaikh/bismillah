@@ -16,4 +16,11 @@ export default defineConfig({
       },
     }),
   ],
+  environments: {
+    rsc: {
+      optimizeDeps: {
+        exclude: ["swr", "@ai-sdk/react"],
+      },
+    },
+  },
 });

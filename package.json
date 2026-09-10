@@ -1,7 +1,7 @@
 {
   "name": "bismillah",
   "version": "0.1.0",
-  "description": "Bismillah \u2014 start every build in the Name. vinext + Cloudflare Workers template with Agents, D1, R2, KV. Halal only.",
+  "description": "Bismillah — start every build in the Name. vinext + Cloudflare Workers template with Agents, D1, R2, KV. Halal only.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -31,6 +31,7 @@
     "types": "wrangler types env.d.ts"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.283",
     "@cloudflare/ai-chat": "0.1.5",
     "@vinext/cloudflare": "^1.0.0-beta.7",
     "agents": "0.6.0",
