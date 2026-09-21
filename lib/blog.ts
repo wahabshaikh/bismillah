@@ -74,7 +74,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Plunk transactional email adapter (welcome / magic-link / reset).",
       "Polar halal one-time checkout, customer portal, idempotent webhook.",
       "Marketing shell, dark mode, legal stubs, SEO (OG / sitemap / robots).",
-      "Rate limiting on auth + webhooks via env.KV.",
+      "Native Cloudflare rate limiting on auth + webhooks.",
     ],
   },
 ];

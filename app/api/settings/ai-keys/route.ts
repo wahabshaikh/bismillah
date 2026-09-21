@@ -13,7 +13,7 @@ import { rateLimit, clientId, tooManyRequests } from "@/lib/rate-limit";
  * PUT    /api/settings/ai-keys  → { provider, key } → saves (encrypted at rest)
  * DELETE /api/settings/ai-keys  → removes the stored key
  *
- * Session-gated + lightly rate-limited via `env.KV`. Workers AI stays the
+ * Session-gated + lightly rate-limited via Cloudflare's native binding. Workers AI stays the
  * default regardless of what is stored here.
  */
 

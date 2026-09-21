@@ -8,7 +8,7 @@ Public GitHub template: [vinext](https://github.com/cloudflare/vinext) App Route
 
 ## Why Bismillah wins
 
-- **Cloudflare-native, end to end.** The only top-tier starter that runs the whole stack on Cloudflare — vinext on Workers, D1 for SQL, R2 for objects, KV for cache and rate limits, Durable Object agents, and Workers AI — *and* ships Better Auth + Plunk + Polar wired in. No Vercel, no external Postgres, no database to provision.
+- **Cloudflare-native, end to end.** The only top-tier starter that runs the whole stack on Cloudflare — vinext on Workers, D1 for SQL, R2 for objects, KV for cache, native rate limiting, Durable Object agents, and Workers AI — *and* ships Better Auth + Plunk + Polar wired in. No Vercel, no external Postgres, no database to provision.
 - **ShipFast speed, production guts.** A fork-and-deploy marketing + auth + billing surface like ShipFast, on top of the production internals you'd expect from Supastarter / Makerkit (idempotent webhooks, rate limiting, encrypted BYOK keys, onboarding, orgs, super-admin), plus zero-trust-shaped agentic AI.
 - **Halal only.** One-time fair pricing through Polar — no riba, no interest, no BNPL or instalment framing anywhere. Every vendor is locked and every integration degrades to a safe demo mode when its secret is unset.
 
@@ -25,7 +25,7 @@ Public GitHub template: [vinext](https://github.com/cloudflare/vinext) App Route
 - **Polar** halal one-time checkout (`/pricing`, `/api/checkout`) + customer portal (`/api/portal`) + idempotent webhook receiver
 - Marketing shell: hero, features, pricing, FAQ, CTA, dark mode toggle (localStorage + `.dark` on `<html>`)
 - Legal stubs (`/privacy`, `/terms`); SEO metadata + OG, `sitemap.xml`, `robots.txt`
-- Fixed-window rate limiting on `/api/auth/*` and `/api/webhooks/polar` via `env.KV`
+- Native Cloudflare rate limiting on `/api/auth/*` and `/api/webhooks/polar`
 - Tailwind + shadcn-style UI primitives
 - Typed `Env` (`env.d.ts`)
 
@@ -43,10 +43,10 @@ Public GitHub template: [vinext](https://github.com/cloudflare/vinext) App Route
 
 ### P2 additions
 
-- **Waitlist** — public `/waitlist` capture (`components/waitlist-form.tsx` + `app/api/waitlist`), D1 `waitlist` table, rate-limited via `env.KV`. Always attempts a joiner confirmation email; pings `WAITLIST_NOTIFY_EMAIL` when set. Both demo-safe; a send failure never fails the join. `lib/waitlist.ts` never leaks whether an address was new
+- **Waitlist** — public `/waitlist` capture (`components/waitlist-form.tsx` + `app/api/waitlist`), D1 `waitlist` table, rate-limited through Cloudflare's native binding. Always attempts a joiner confirmation email; pings `WAITLIST_NOTIFY_EMAIL` when set. Both demo-safe; a send failure never fails the join. `lib/waitlist.ts` never leaks whether an address was new
 - **Docs / help center** — `/docs` + `/docs/[slug]` from hardcoded content in `lib/docs.ts` (no MDX, no i18n): getting-started, auth, email-and-payments, agents-and-api, bindings. Slugs added to the sitemap
 - **Usage metering stub** — display-only "Usage this month" card on `/settings` over local D1 `usage_events` counts (`lib/usage.ts`). "Record demo unit" button → `/api/usage` (session-gated, rate-limited). `ingestPolarUsage` is a documented no-op showing where to forward events to Polar Events/Meters (prepaid metered credits — no riba/BNPL); it does not call Polar
-- **Product API for agents** — REST `/api/v1`: `GET /api/v1/health`, `GET|POST /api/v1/notes`. CORS `*` + `OPTIONS` preflight via `lib/product-api.ts`. Optional `Authorization: Bearer <PRODUCT_API_KEY>` gate on `/notes` (open/demo when unset); writes rate-limited via `env.KV`. An MCP server can wrap these REST tools later — see AGENTS.md
+- **Product API for agents** — REST `/api/v1`: `GET /api/v1/health`, `GET|POST /api/v1/notes`. CORS `*` + `OPTIONS` preflight via `lib/product-api.ts`. Optional `Authorization: Bearer <PRODUCT_API_KEY>` gate on `/notes` (open/demo when unset); writes use native rate limiting. An MCP server can wrap these REST tools later — see AGENTS.md
 
 ## Quick start
 
@@ -72,7 +72,7 @@ Open the app, then try `/chat`, `/demos`, `/signup`, and `/pricing`.
 - **Google OAuth** only registers when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set — otherwise the provider is omitted and the button reports it's unavailable.
 - Every helper degrades gracefully when its secret is unset — the site never crashes in demo mode (email is logged and skipped; checkout/portal return a `503` JSON hint).
 - On `order.paid` the Polar webhook records a row in D1 `orders`. Signature is verified with the Standard Webhooks scheme (Web Crypto) when `POLAR_WEBHOOK_SECRET` is set, and every delivery id is recorded in `webhook_events` so **retries are idempotent**.
-- `/api/auth/*` and `/api/webhooks/polar` are rate-limited (fixed window) using the app `KV` namespace — never `VINEXT_KV_CACHE`.
+- `/api/auth/*` and `/api/webhooks/polar` use Cloudflare's native Rate Limiting bindings, so rejected traffic cannot exhaust KV writes.
 
 Demo paths: `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/dashboard` (protected), `/settings` (protected), `/pricing`, `/api/checkout`, `/api/portal`, `/checkout/success`, `/api/webhooks/polar`, `/privacy`, `/terms`, `/sitemap.xml`, `/robots.txt`, `/blog`, `/changelog`, `/api/onboarding`, `/api/settings/ai-keys`, `/api/monitor`.
 
@@ -167,7 +167,7 @@ Set `PLUNK_FROM_EMAIL` to an address on the authenticated domain. Verify in Plun
 | `ChatAgent` | Durable Object (SQLite class) |
 | `ASSETS` | Static assets |
 
-**Keep the two KV namespaces separate.** App counters/rate-limits use `KV`. vinext cache uses `VINEXT_KV_CACHE`.
+**Keep the two KV namespaces separate.** Demo counters use `KV`. vinext cache uses `VINEXT_KV_CACHE`. Request throttling uses `RATE_LIMITER_*`, not KV.
 
 ## Deploy
 

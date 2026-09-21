@@ -34,7 +34,7 @@ Locked vendors: **Better Auth** (auth) · **Plunk** (email) · **Polar** (paymen
 | Auth factory | `lib/auth.ts` `createAuth(env, request?)` | email/password + `magicLink` plugin + Google OAuth (only when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` set); `sendResetPassword` → Plunk |
 | Auth client | `lib/auth-client.ts` | `authClient` + `magicLinkClient()` |
 | Server session | `lib/session.ts` | `getSession()`, `requireSession(redirectTo?)` for RSC pages |
-| Auth route | `app/api/auth/[...all]/route.ts` | rate-limited via `lib/rate-limit.ts` (`env.KV`) |
+| Auth route | `app/api/auth/[...all]/route.ts` | rate-limited via `lib/rate-limit.ts` (native Cloudflare binding) |
 | Email adapter | `lib/email.ts` | `sendWelcomeEmail` / `sendMagicLinkEmail` / `sendPasswordResetEmail` — wrap `lib/plunk.ts`; no-op when `PLUNK_API_KEY` unset |
 | Checkout | `lib/polar.ts` `createCheckoutSession` + `app/api/checkout/route.ts` | `?type=subscription` reads `POLAR_SUBSCRIPTION_PRODUCT_ID` (stub); attaches session email + `externalCustomerId` |
 | Portal | `lib/polar.ts` `createPortalLink` + `app/api/portal/route.ts` | matches Polar customer by external id (= user id); soft 503 `setup` message if none |
@@ -82,10 +82,10 @@ Add `migrations/000N_*.sql` (never edit an applied migration). Run `npm run db:m
 
 | Concern | Entry point | Notes |
 |---------|-------------|-------|
-| Waitlist | `lib/waitlist.ts` + `app/api/waitlist/route.ts` + `/waitlist` + `components/waitlist-form.tsx` | D1 `waitlist` (`migrations/0007_p2.sql`). `joinWaitlist` lowercases/trims, shape-checks, UNIQUE conflict → `{ ok: true, already: true }` (never leaks new-vs-existing), swallows D1 errors. POST rate-limited via `env.KV` (8/min). Always attempts `sendWaitlistConfirmEmail`; owner ping via `sendWaitlistOwnerEmail` when `WAITLIST_NOTIFY_EMAIL` set. Email failure never fails the join |
+| Waitlist | `lib/waitlist.ts` + `app/api/waitlist/route.ts` + `/waitlist` + `components/waitlist-form.tsx` | D1 `waitlist` (`migrations/0007_p2.sql`). `joinWaitlist` lowercases/trims, shape-checks, UNIQUE conflict → `{ ok: true, already: true }` (never leaks new-vs-existing), swallows D1 errors. POST uses native rate limiting (8/min). Always attempts `sendWaitlistConfirmEmail`; owner ping via `sendWaitlistOwnerEmail` when `WAITLIST_NOTIFY_EMAIL` set. Email failure never fails the join |
 | Docs / help center | `lib/docs.ts` → `app/docs/*` | Hardcoded arrays like `lib/blog.ts`. No MDX, no i18n. Pages: getting-started, auth, email-and-payments, agents-and-api, bindings. Slugs in `app/sitemap.xml` |
 | Usage metering (display-only) | `lib/usage.ts` + `app/api/usage/route.ts` + `components/settings-usage.tsx` on `/settings` | D1 `usage_events`. `recordUsage` / `getUsageSummary` (units this month for `agent_tokens`, `MONTHLY_ALLOWANCE` = 10000). `ingestPolarUsage` is a **documented no-op** — never hits Polar's events API here. "Record demo unit" button POSTs `/api/usage` (session-gated, rate-limited). Halal: prepaid/fair metered credits, no riba/BNPL |
-| Product API (agents) | `lib/product-api.ts` + `app/api/v1/{health,notes}/route.ts` | REST is the agent surface (no MCP SDK dep). `GET /api/v1/health` open; `GET|POST /api/v1/notes` gated by `Authorization: Bearer <PRODUCT_API_KEY>` when set, open/demo when unset. CORS `*` + `OPTIONS` preflight. Writes rate-limited via `env.KV`. See AGENTS.md "Product API (agents)" |
+| Product API (agents) | `lib/product-api.ts` + `app/api/v1/{health,notes}/route.ts` | REST is the agent surface (no MCP SDK dep). `GET /api/v1/health` open; `GET|POST /api/v1/notes` gated by `Authorization: Bearer <PRODUCT_API_KEY>` when set, open/demo when unset. CORS `*` + `OPTIONS` preflight. Writes use native rate limiting. See AGENTS.md "Product API (agents)" |
 
 ### Don't (P2)
 
@@ -98,7 +98,7 @@ Add `migrations/000N_*.sql` (never edit an applied migration). Run `npm run db:m
 ## Don't (SaaS additions)
 
 - Don't add Stripe/Clerk/Auth.js/Resend. Don't add subscription/instalment/interest framing.
-- Don't rate-limit with `VINEXT_KV_CACHE` — use `env.KV`.
+- Don't rate-limit with either KV namespace — use the native `RATE_LIMITER_*` bindings.
 - Don't ship a webhook path without the `webhook_events` idempotency check.
 
 See `AGENTS.md` and `README.md` for bindings, secrets, and deploy steps.

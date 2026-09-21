@@ -9,7 +9,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export const revalidate = 300;
+// Static marketing content: cache indefinitely and refresh on deployment.
+// Five-minute ISR forced recurring SSR work that can exceed the 10 ms CPU
+// allowance on the Workers Free plan and needlessly write cache entries to KV.
+export const revalidate = false;
 
 const btn =
   "inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors";
@@ -74,7 +77,7 @@ const faqs = [
   },
   {
     q: "Why Cloudflare instead of Vercel + Postgres?",
-    a: "Bismillah is Cloudflare-native: vinext on Workers, D1 for SQL, R2 for objects, KV for cache/limits, and Durable Object agents with Workers AI. No external database to provision.",
+    a: "Bismillah is Cloudflare-native: vinext on Workers, D1 for SQL, R2 for objects, KV for cache, native rate limiting, and Durable Object agents with Workers AI. No external database to provision.",
   },
   {
     q: "Which vendors are locked in?",

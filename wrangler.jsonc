@@ -44,6 +44,38 @@
       "id": "02cf4b23eb084760b4fd0e755bbd6e96"
     }
   ],
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER_8",
+      "namespace_id": "19891208",
+      "simple": { "limit": 8, "period": 60 }
+    },
+    {
+      "name": "RATE_LIMITER_10",
+      "namespace_id": "19891210",
+      "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "RATE_LIMITER_12",
+      "namespace_id": "19891212",
+      "simple": { "limit": 12, "period": 60 }
+    },
+    {
+      "name": "RATE_LIMITER_20",
+      "namespace_id": "19891220",
+      "simple": { "limit": 20, "period": 60 }
+    },
+    {
+      "name": "RATE_LIMITER_30",
+      "namespace_id": "19891230",
+      "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "RATE_LIMITER_60",
+      "namespace_id": "19891260",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {
