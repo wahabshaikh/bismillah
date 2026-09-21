@@ -4,7 +4,7 @@ import { rateLimit, clientId, tooManyRequests } from "@/lib/rate-limit";
 
 /**
  * POST /api/webhooks/polar — Polar webhook receiver.
- * - Rate-limited per IP via `env.KV`.
+ * - Rate-limited per IP via Cloudflare's native binding.
  * - Verifies the Standard Webhooks signature when POLAR_WEBHOOK_SECRET is set.
  * - Idempotent: each `webhook-id` is recorded in D1 `webhook_events`; a repeat
  *   delivery is acknowledged with 200 and does nothing.

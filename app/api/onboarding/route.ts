@@ -12,7 +12,7 @@ import { rateLimit, clientId, tooManyRequests } from "@/lib/rate-limit";
  * GET  /api/onboarding            → { steps, state } for the signed-in user
  * POST /api/onboarding            → { action: "complete_step", stepId } | { action: "dismiss" }
  *
- * Session-gated. Lightly rate-limited via `env.KV`.
+ * Session-gated. Lightly rate-limited via Cloudflare's native binding.
  */
 
 export async function GET() {

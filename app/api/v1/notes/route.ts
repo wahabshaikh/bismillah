@@ -10,7 +10,7 @@ import { rateLimit, clientId, tooManyRequests } from "@/lib/rate-limit";
  * REST product API for agents — same shape as `/api/notes`.
  *
  * Auth: `Authorization: Bearer <PRODUCT_API_KEY>` when that secret is set;
- * open (demo) when it is unset. Writes are rate-limited via `env.KV`.
+ * open (demo) when it is unset. Writes use Cloudflare's native rate limiter.
  */
 
 export function OPTIONS() {

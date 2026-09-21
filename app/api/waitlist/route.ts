@@ -11,7 +11,7 @@ import { rateLimit, clientId, tooManyRequests } from "@/lib/rate-limit";
 /**
  * POST /api/waitlist — public pre-launch capture. JSON `{ email, name? }`.
  *
- * Rate-limited via `env.KV` (8/min per IP). The response never reveals whether
+ * Rate-limited via Cloudflare's native binding (8/min per IP). The response never reveals whether
  * the address was new. Email sends (joiner confirmation + optional owner ping)
  * are best-effort — a send failure never fails the join.
  */

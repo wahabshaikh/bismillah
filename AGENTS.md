@@ -14,11 +14,11 @@ Guidance for coding agents working in this repo.
 - Custom worker: `worker/index.ts` routes `/agents/*` then vinext `fetch-handler`
 - Durable Object: `ChatAgent` (`worker/chat-agent.ts`) via `@cloudflare/ai-chat` + `agents`
 - Workers AI via `workers-ai-provider`
-- D1 (`DB`), R2 (`ARTIFACTS`), KV (`KV`), separate vinext cache KV (`VINEXT_KV_CACHE`)
+- D1 (`DB`), R2 (`ARTIFACTS`), KV (`KV`), separate vinext cache KV (`VINEXT_KV_CACHE`), native Rate Limiting bindings (`RATE_LIMITER_*`)
 - Auth: **Better Auth** only — `lib/auth.ts` `createAuth(env, request?)`, D1 native. email/password + `magicLink` plugin + `admin` plugin (impersonation; authority = `ADMIN_EMAILS`) + Google OAuth (only when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` set) + forgot/reset. Client: `lib/auth-client.ts`. Server session helpers: `lib/session.ts`.
 - Email: **Plunk** only — transport `lib/plunk.ts` `sendTransactionalEmail` (fetch to `api.useplunk.com/v1/send`); templates in `lib/email.ts` (`sendWelcomeEmail` / `sendMagicLinkEmail` / `sendPasswordResetEmail`).
 - Payments: **Polar** only (`@polar-sh/sdk`) — `lib/polar.ts`: `createCheckoutSession` (one-time + `?type=subscription` stub), `createPortalLink`, `verifyPolarWebhook`. Halal one-time price, no riba/BNPL.
-- Rate limiting: `lib/rate-limit.ts` — fixed window on `env.KV` (never `VINEXT_KV_CACHE`); wired into `/api/auth/*` and `/api/webhooks/polar`.
+- Rate limiting: `lib/rate-limit.ts` — Cloudflare native Rate Limiting bindings (never KV); wired into `/api/auth/*` and `/api/webhooks/polar`.
 - Webhook idempotency: D1 `webhook_events(id PRIMARY KEY)` — `migrations/0003_webhook_events.sql`.
 - Site URL: `lib/site.ts` `getSiteUrl(env, request?)` — `NEXT_PUBLIC_SITE_URL` → `BETTER_AUTH_URL` → origin → `https://bismillah.wahabshaikh.workers.dev`.
 
@@ -36,7 +36,7 @@ Guidance for coding agents working in this repo.
 
 ## P2 features
 
-- Waitlist: `lib/waitlist.ts` (`joinWaitlist` — lowercase/trim, shape check, UNIQUE conflict → `{ ok: true, already: true }`, D1 errors swallowed) + `app/api/waitlist/route.ts` (rate-limited via `env.KV`, 8/min) + `/waitlist` page + `components/waitlist-form.tsx`. D1 `waitlist` (`migrations/0007_p2.sql`). Always attempts `sendWaitlistConfirmEmail`; pings `WAITLIST_NOTIFY_EMAIL` via `sendWaitlistOwnerEmail` when set. Email failure never fails the join.
+- Waitlist: `lib/waitlist.ts` (`joinWaitlist` — lowercase/trim, shape check, UNIQUE conflict → `{ ok: true, already: true }`, D1 errors swallowed) + `app/api/waitlist/route.ts` (native rate limit, 8/min) + `/waitlist` page + `components/waitlist-form.tsx`. D1 `waitlist` (`migrations/0007_p2.sql`). Always attempts `sendWaitlistConfirmEmail`; pings `WAITLIST_NOTIFY_EMAIL` via `sendWaitlistOwnerEmail` when set. Email failure never fails the join.
 - Docs/help center: `lib/docs.ts` hardcoded arrays → `app/docs/*` (mirrors `app/blog/*`). No MDX, no i18n. Slugs in `app/sitemap.xml`.
 - Usage metering (display-only): `lib/usage.ts` — `recordUsage` (D1 `usage_events`), `getUsageSummary` (units this month for `agent_tokens`, `MONTHLY_ALLOWANCE` constant), `ingestPolarUsage` (documented **no-op** — do not hit Polar's events API in this slice). `app/api/usage/route.ts` (session-gated, rate-limited). `components/settings-usage.tsx` card on `/settings` with a "Record demo unit" button. Halal: prepaid/fair metered credits, never riba/BNPL/subscription pressure.
 - Product API (agents): REST `/api/v1` — see the section below. No MCP SDK dependency.
@@ -90,7 +90,7 @@ REST surface for agents. `lib/product-api.ts` provides `jsonWithCors` / `corsPre
 - **Endpoints:**
   - `GET /api/v1/health` → `{ ok: true, name: "bismillah", version: "0.1.0" }` — always open.
   - `GET /api/v1/notes` → `{ notes }` (same shape as `/api/notes`).
-  - `POST /api/v1/notes` → body `{ title, body? }` → `{ note }` (201). Rate-limited via `env.KV`.
+  - `POST /api/v1/notes` → body `{ title, body? }` → `{ note }` (201). Uses native rate limiting.
   - `OPTIONS` on both routes → CORS preflight (`Access-Control-Allow-Origin: *`).
 - **Auth:** when `PRODUCT_API_KEY` is set, `/api/v1/notes` requires `Authorization: Bearer <PRODUCT_API_KEY>` (401 otherwise). When unset, the surface is **open (demo)**. Health is always open.
 - **Examples:**

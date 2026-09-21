@@ -1,15 +1,22 @@
 /**
- * Fixed-window rate limiter backed by the app `KV` namespace.
+ * Request rate limiter backed by Cloudflare's native Rate Limiting binding.
  *
- * IMPORTANT: uses `env.KV` (app namespace) — never `VINEXT_KV_CACHE`, which is
- * reserved for vinext's ISR/data cache.
+ * This deliberately does not use Workers KV: KV's free tier permits only
+ * 1,000 writes/day, while a KV counter consumes one write for every request
+ * (including rejected traffic). Native counters are local, asynchronous, and
+ * do not consume the account's KV write quota.
  *
- * Demo-safe: if `KV` is somehow unbound the limiter fails open (allows the
- * request) rather than crashing the route.
+ * Demo-safe: if a binding is unavailable the limiter fails open rather than
+ * crashing the route. Wrangler provides the bindings in deployed environments.
  */
 
 export type RateLimitEnv = {
-  KV?: KVNamespace;
+  RATE_LIMITER_8?: RateLimit;
+  RATE_LIMITER_10?: RateLimit;
+  RATE_LIMITER_12?: RateLimit;
+  RATE_LIMITER_20?: RateLimit;
+  RATE_LIMITER_30?: RateLimit;
+  RATE_LIMITER_60?: RateLimit;
 };
 
 export type RateLimitResult = {
@@ -28,6 +35,20 @@ export type RateLimitOptions = {
   windowSeconds: number;
 };
 
+type SupportedLimit = 8 | 10 | 12 | 20 | 30 | 60;
+
+function bindingFor(env: RateLimitEnv, limit: number): RateLimit | undefined {
+  const bindings: Partial<Record<SupportedLimit, RateLimit | undefined>> = {
+    8: env.RATE_LIMITER_8,
+    10: env.RATE_LIMITER_10,
+    12: env.RATE_LIMITER_12,
+    20: env.RATE_LIMITER_20,
+    30: env.RATE_LIMITER_30,
+    60: env.RATE_LIMITER_60,
+  };
+  return bindings[limit as SupportedLimit];
+}
+
 export async function rateLimit(
   env: RateLimitEnv,
   identifier: string,
@@ -40,24 +61,20 @@ export async function rateLimit(
     limit,
     resetSeconds: windowSeconds,
   };
-  if (!env.KV) return fallback;
-
-  const window = Math.floor(Date.now() / 1000 / windowSeconds);
-  const kvKey = `rl:${key}:${identifier}:${window}`;
+  const limiter = windowSeconds === 60 ? bindingFor(env, limit) : undefined;
+  if (!limiter) return fallback;
 
   try {
-    const current = Number((await env.KV.get(kvKey)) ?? "0");
-    const next = current + 1;
-    // TTL a little past the window so counters self-expire.
-    await env.KV.put(kvKey, String(next), { expirationTtl: windowSeconds + 60 });
+    const { success } = await limiter.limit({ key: `${key}:${identifier}` });
     return {
-      ok: next <= limit,
-      remaining: Math.max(0, limit - next),
+      ok: success,
+      // Native rate limiting intentionally exposes only success/failure.
+      remaining: success ? limit : 0,
       limit,
       resetSeconds: windowSeconds - ((Date.now() / 1000) % windowSeconds),
     };
   } catch (err) {
-    console.error("[rate-limit] KV error — failing open", err);
+    console.error("[rate-limit] native binding error — failing open", err);
     return fallback;
   }
 }

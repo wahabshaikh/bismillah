@@ -27,6 +27,7 @@
     "deploy": "vinext-cloudflare deploy --config dist/server/wrangler.json",
     "db:migrate": "wrangler d1 migrations apply bismillah --local",
     "db:migrate:remote": "wrangler d1 migrations apply bismillah --remote",
+    "test:unit": "node --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "types": "wrangler types env.d.ts",
     "test:e2e": "playwright test"

@@ -5,11 +5,17 @@ interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
   ARTIFACTS: R2Bucket;
-  /** App KV (counters, rate limits) — id 2423ae5f6f90406d8a2233680c5d1c26 */
+  /** App KV (demo counters only) — id 2423ae5f6f90406d8a2233680c5d1c26 */
   KV: KVNamespace;
   /** vinext ISR/data cache — id 02cf4b23eb084760b4fd0e755bbd6e96 (do not reuse for app data) */
   VINEXT_KV_CACHE: KVNamespace;
   ChatAgent: DurableObjectNamespace;
+  RATE_LIMITER_8: RateLimit;
+  RATE_LIMITER_10: RateLimit;
+  RATE_LIMITER_12: RateLimit;
+  RATE_LIMITER_20: RateLimit;
+  RATE_LIMITER_30: RateLimit;
+  RATE_LIMITER_60: RateLimit;
 
   /* --- Site --- */
   NEXT_PUBLIC_SITE_URL?: string;
