@@ -1,0 +1,22 @@
+// Shared defaults every Worker in this repo must use.
+//
+// Wrangler has no `extends`, so each Worker keeps its own wrangler.jsonc and
+// `pnpm check:wrangler` fails CI when one drifts from these values.
+// `pnpm fix:wrangler` writes them into every Worker config.
+//
+// Keys here are enforced as-is, except `compatibility_flags`, where a Worker
+// may add flags on top of the shared ones.
+{
+  // Bump this in one place, run `pnpm fix:wrangler`, then `pnpm typegen`.
+  // It cannot be newer than the workerd bundled with @cloudflare/vitest-pool-workers,
+  // or `pnpm test` fails to start the runtime.
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Workers Logs is included in the $5/mo plan (20M log events/month).
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "upload_source_maps": true
+}

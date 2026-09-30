@@ -1,0 +1,34 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "stream",
+  "agentGuidance": false,
+  "tasks": {
+    "typegen": {
+      "inputs": ["wrangler.jsonc", ".dev.vars.example"],
+      "outputs": ["worker-configuration.d.ts"]
+    },
+    "build": {
+      "dependsOn": ["^build", "typegen"],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck", "typegen"]
+    },
+    "test": {
+      "dependsOn": ["typegen"],
+      "outputs": []
+    },
+    "dev": {
+      "dependsOn": ["typegen"],
+      "cache": false,
+      "persistent": true
+    },
+    "deploy": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

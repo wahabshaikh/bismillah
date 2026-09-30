@@ -1,0 +1,15 @@
+{
+  "name": "@bismillah/tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared strict TypeScript configs.",
+  "license": "MIT",
+  "files": [
+    "*.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./library.json": "./library.json",
+    "./worker.json": "./worker.json"
+  }
+}

@@ -1,0 +1,17 @@
+// Shared keys (compatibility date/flags, observability, source maps) come from
+// tooling/wrangler/base.jsonc and are enforced by `pnpm check:wrangler`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bismillah-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "upload_source_maps": true,
+  "vars": {
+    "APP_NAME": "bismillah"
+  }
+}
