@@ -10,6 +10,9 @@ coverage/
 !.dev.vars.example
 worker-configuration.d.ts
 
+# Answers saved by `pnpm run deploy`
+.deploy.json
+
 # Env
 .env
 .env.*

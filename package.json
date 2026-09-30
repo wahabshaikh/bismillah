@@ -18,7 +18,9 @@
     "check:wrangler": "pnpm --filter @bismillah/wrangler check",
     "typegen": "turbo run typegen types",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
-    "fix:wrangler": "pnpm --filter @bismillah/wrangler fix"
+    "fix:wrangler": "pnpm --filter @bismillah/wrangler fix",
+    "deploy": "node tooling/deploy/src/main.ts",
+    "deploy:dry-run": "node tooling/deploy/src/main.ts --dry-run"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

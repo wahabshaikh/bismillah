@@ -3,9 +3,28 @@
 An open-source, multi-platform starter kit built entirely on Cloudflare, sized to
 run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/).
 
-> **Status:** the monorepo, tooling, CI, the API Worker, the web app, the mobile app and
-> background work (Queues, Cron Triggers, Durable Objects) are in place; a one-command deploy
-> and a budget guide come next.
+API, web app and mobile app on one typed API, with auth, a database, file uploads, background
+jobs and realtime events, all on Cloudflare.
+
+## Quickstart
+
+```sh
+git clone https://github.com/wahabshaikh/bismillah my-app && cd my-app
+corepack enable && pnpm install
+cp apps/api/.dev.vars.example apps/api/.dev.vars   # then set BETTER_AUTH_SECRET
+pnpm dev                                           # everything runs locally, no account needed
+```
+
+When you're ready to ship:
+
+```sh
+pnpm run deploy
+```
+
+That signs you in to Cloudflare, creates the database, bucket, queue and KV namespace, applies
+migrations, sets secrets, and deploys the API and web app to your domain. See
+[docs/deploy.md](docs/deploy.md), and [docs/budget.md](docs/budget.md) for what it all costs
+on the $5 plan (a worked example of 3,000 daily users fits).
 
 ## Stack
 
@@ -25,7 +44,8 @@ run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/p
 | Files           | [R2](https://developers.cloudflare.com/r2/)                              |
 | Background jobs | [Queues](https://developers.cloudflare.com/queues/) + [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/) |
 | Realtime        | [Durable Objects](https://developers.cloudflare.com/durable-objects/) with hibernatable WebSockets |
-| CI              | GitHub Actions: lint, typecheck, test, build                             |
+| CI              | GitHub Actions: lint, typecheck, test, build, deploy dry run             |
+| Deploy          | `pnpm run deploy`: one command, idempotent, CI-friendly                  |
 
 ## Layout
 
@@ -42,12 +62,16 @@ packages/
 tooling/
   tsconfig/           Shared strict tsconfigs: base, library, worker, react
   wrangler/           Shared Wrangler defaults + the checker that enforces them
+  deploy/             The one-command deploy behind `pnpm run deploy`
+docs/
+  deploy.md           Deploying, from CI too
+  budget.md           What each service costs against the $5 plan
 ```
 
 Internal packages export their TypeScript source directly (`"exports": "./src/index.ts"`),
 so there is no build step between packages: Wrangler and Vitest bundle them as-is.
 
-## Getting started
+## Local development
 
 Requires Node.js 22.18+ (see `.nvmrc`) and pnpm 10 (`corepack enable`).
 
@@ -81,6 +105,8 @@ pnpm --filter @bismillah/mobile start
 | `pnpm typegen`        | Regenerates Worker types and the API's RPC types (`dist/types`)    |
 | `pnpm check:wrangler` | Verifies every Worker matches `tooling/wrangler/base.jsonc`        |
 | `pnpm fix:wrangler`   | Writes the shared Wrangler defaults into every Worker config       |
+| `pnpm run deploy`     | Provisions, migrates and deploys everything ([docs/deploy.md](docs/deploy.md)) |
+| `pnpm deploy:dry-run` | Builds and bundles every Worker for deploy without uploading       |
 
 Turborepo runs `typegen` before `dev`, `typecheck` and `test`, so generated
 Worker types are never stale.

@@ -44,18 +44,17 @@ domains (or two `*.workers.dev` subdomains, which are separate sites) won't work
 
 ## Deploying
 
-1. Deploy the API first (see [its README](../api/README.md)) on its own domain, e.g.
-   `api.example.com`, and add this app's origin to the API's `TRUSTED_ORIGINS`.
-2. Give this Worker a custom domain on the same site, e.g. by adding
-   `"routes": [{ "pattern": "app.example.com", "custom_domain": true }]` to `wrangler.jsonc`.
-3. Build with the API URL and deploy:
+Run `pnpm run deploy` from the repo root: it deploys the API on `api.<your domain>`, then builds
+this app with `VITE_API_URL` pointing at it and deploys it on `app.<your domain>`. See
+[docs/deploy.md](../../docs/deploy.md).
 
-   ```sh
-   VITE_API_URL=https://api.example.com pnpm run deploy
-   ```
+The two must share a site (sibling subdomains are fine) so the browser sends the API's session
+cookie with this app's requests. `VITE_API_URL` is inlined into the client bundle at build time,
+so to deploy this app on its own, build with it set:
 
-`VITE_API_URL` is inlined into the client bundle at build time, so set it wherever you build
-(locally or in CI).
+```sh
+VITE_API_URL=https://api.example.com pnpm run deploy --domain app.example.com
+```
 
 ## Staying inside the $5/month plan
 

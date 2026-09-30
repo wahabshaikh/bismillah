@@ -115,25 +115,22 @@ Adding Better Auth plugins that need tables? Add their tables to `src/db/schema.
 
 ## Deploying
 
-Bindings in `wrangler.jsonc` have no resource IDs: the first `wrangler deploy` creates the D1
-database, KV namespace, R2 bucket and queue and writes their IDs back into the file. Commit that
-change. The Durable Object class is created by the `migrations` block, and the Cron Trigger is
-registered on every deploy. Queues and Durable Objects both need the Workers Paid plan.
+Run `pnpm run deploy` from the repo root. It creates the D1 database, applies migrations, sets
+`BETTER_AUTH_SECRET`, points `BETTER_AUTH_URL` and `TRUSTED_ORIGINS` at production and deploys
+this Worker, then the web app. See [docs/deploy.md](../../docs/deploy.md).
 
-```sh
-pnpm wrangler secret put BETTER_AUTH_SECRET
-pnpm wrangler deploy          # first time only: provisions resources
-pnpm db:migrate:remote        # first time only: creates the tables
-pnpm run deploy               # every time after: migrate, then deploy
-```
+Bindings in `wrangler.jsonc` have no resource IDs: Wrangler finds the D1 database, R2 bucket and
+queue by name, creates any that are missing on deploy (the KV namespace too), and remembers them
+on the deployed Worker. The Durable Object class is created by the `migrations` block, and the
+Cron Trigger is registered on every deploy.
 
-Set `BETTER_AUTH_URL` and `TRUSTED_ORIGINS` in `wrangler.jsonc` to your production URLs (or
-override them per environment with an `env` block). Keep your mobile app's scheme in
-`TRUSTED_ORIGINS` and drop `exp://`, which only Expo Go uses during development.
+To deploy only this Worker after the first full deploy, `pnpm run deploy` here applies new
+migrations and runs `wrangler deploy`. It uses the `vars` in `wrangler.jsonc`, so pass
+`--var BETTER_AUTH_URL:… --var TRUSTED_ORIGINS:…` or use the root command, which sets them.
 
 ## Staying inside the $5/month plan
 
-The design choices here exist to keep a typical app within what the
+[docs/budget.md](../../docs/budget.md) has the whole-app picture with a worked example. The design choices here exist to keep a typical app within what the
 [Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/) includes:
 
 | Resource | Included monthly                                          | How this app uses it                                           |
