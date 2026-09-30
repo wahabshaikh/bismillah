@@ -5,10 +5,16 @@
   "description": "API Worker: Hono, D1 + Drizzle, Better Auth, KV and R2.",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    "./app": {
+      "types": "./dist/types/app.d.ts"
+    }
+  },
   "scripts": {
     "dev": "pnpm db:migrate:local && wrangler dev",
     "deploy": "pnpm db:migrate:remote && wrangler deploy",
     "typegen": "wrangler types",
+    "types": "tsc -p tsconfig.types.json",
     "typecheck": "tsc",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
@@ -19,9 +25,9 @@
   "dependencies": {
     "@bismillah/core": "workspace:*",
     "@hono/zod-validator": "0.9.1",
-    "better-auth": "1.7.6",
+    "better-auth": "catalog:",
     "drizzle-orm": "0.45.3",
-    "hono": "4.13.11",
+    "hono": "catalog:",
     "zod": "4.6.5"
   },
   "devDependencies": {

@@ -1,0 +1,40 @@
+{
+  "name": "@bismillah/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Web app: TanStack Start on Cloudflare Workers, talking to the API Worker over typed RPC.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && wrangler deploy",
+    "typegen": "wrangler types --include-runtime=false",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@bismillah/api-client": "workspace:*",
+    "@bismillah/ui": "workspace:*",
+    "@tanstack/react-query": "5.104.0",
+    "@tanstack/react-router": "1.170.40",
+    "@tanstack/react-router-ssr-query": "1.167.3",
+    "@tanstack/react-start": "1.168.59",
+    "better-auth": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@bismillah/tsconfig": "workspace:*",
+    "@cloudflare/vite-plugin": "catalog:",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "6.1.1",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

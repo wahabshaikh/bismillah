@@ -1,0 +1,13 @@
+{
+  // Emits .d.ts files to dist/types so other packages (the RPC client) can import
+  // `AppType` without type-checking this Worker's source against their own globals.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "src",
+    "outDir": "dist/types"
+  },
+  "include": ["src", "worker-configuration.d.ts"]
+}

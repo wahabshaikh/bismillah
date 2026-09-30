@@ -1,0 +1,8 @@
+{
+  "extends": "@bismillah/tsconfig/library.json",
+  "compilerOptions": {
+    // `fetch`, `Request` and `Response` are the only platform APIs this package uses.
+    "lib": ["ES2024", "DOM"]
+  },
+  "include": ["src"]
+}

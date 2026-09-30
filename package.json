@@ -16,7 +16,7 @@
     "lint": "biome ci . && pnpm check:wrangler",
     "format": "biome check --write .",
     "check:wrangler": "pnpm --filter @bismillah/wrangler check",
-    "typegen": "turbo run typegen",
+    "typegen": "turbo run typegen types",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "fix:wrangler": "pnpm --filter @bismillah/wrangler fix"
   },

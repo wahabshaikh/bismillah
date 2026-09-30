@@ -39,7 +39,9 @@ curl -b jar -X POST 'localhost:8787/v1/uploads?filename=notes.txt' \
 
 Sessions are cookies, so browser clients call the API with `credentials: "include"` from an
 origin listed in `TRUSTED_ORIGINS`. `AppType` from `src/app.ts` types the `/v1` routes for
-Hono's RPC client.
+Hono's RPC client: `pnpm types` emits it as declarations to `dist/types` (exported as
+`@bismillah/api/app`), and [`@bismillah/api-client`](../../packages/api-client) wraps it for the
+web and mobile apps. Turborepo runs `types` before any dependent package type-checks.
 
 ## Layout
 

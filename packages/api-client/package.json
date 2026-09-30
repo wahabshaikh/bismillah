@@ -1,0 +1,24 @@
+{
+  "name": "@bismillah/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Typed client for the API Worker, built on Hono RPC. Shared by the web and mobile apps.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@bismillah/api": "workspace:*",
+    "@bismillah/tsconfig": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

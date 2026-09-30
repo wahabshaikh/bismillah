@@ -1,0 +1,7 @@
+{
+  "extends": "@bismillah/tsconfig/react.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src", "vite.config.ts", "worker-configuration.d.ts"]
+}

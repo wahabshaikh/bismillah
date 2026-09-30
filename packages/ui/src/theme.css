@@ -1,0 +1,62 @@
+/*
+ * Design tokens shared by every web surface. Import after Tailwind:
+ *
+ *   @import "tailwindcss";
+ *   @import "@bismillah/ui/theme.css";
+ *
+ * Tokens are plain CSS variables, so dark mode is a variable swap, not a class per element.
+ */
+@source "./";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+
+  --color-background: var(--ui-background);
+  --color-foreground: var(--ui-foreground);
+  --color-muted: var(--ui-muted);
+  --color-muted-foreground: var(--ui-muted-foreground);
+  --color-border: var(--ui-border);
+  --color-primary: var(--ui-primary);
+  --color-primary-foreground: var(--ui-primary-foreground);
+  --color-danger: var(--ui-danger);
+  --color-danger-foreground: var(--ui-danger-foreground);
+  --color-ring: var(--ui-ring);
+
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+:root {
+  color-scheme: light dark;
+  --ui-background: oklch(0.99 0 0);
+  --ui-foreground: oklch(0.21 0.01 260);
+  --ui-muted: oklch(0.96 0.005 260);
+  --ui-muted-foreground: oklch(0.5 0.02 260);
+  --ui-border: oklch(0.91 0.005 260);
+  --ui-primary: oklch(0.6 0.19 45);
+  --ui-primary-foreground: oklch(0.99 0 0);
+  --ui-danger: oklch(0.58 0.22 27);
+  --ui-danger-foreground: oklch(0.99 0 0);
+  --ui-ring: oklch(0.6 0.19 45 / 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ui-background: oklch(0.17 0.01 260);
+    --ui-foreground: oklch(0.96 0.005 260);
+    --ui-muted: oklch(0.23 0.01 260);
+    --ui-muted-foreground: oklch(0.7 0.015 260);
+    --ui-border: oklch(0.3 0.01 260);
+    --ui-primary: oklch(0.7 0.17 50);
+    --ui-primary-foreground: oklch(0.17 0.01 260);
+    --ui-danger: oklch(0.65 0.2 25);
+    --ui-danger-foreground: oklch(0.17 0.01 260);
+    --ui-ring: oklch(0.7 0.17 50 / 0.5);
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}

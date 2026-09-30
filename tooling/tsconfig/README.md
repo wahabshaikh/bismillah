@@ -7,6 +7,7 @@ Shared, strict TypeScript configs. Every package extends one of these:
 | `base.json`    | The strict defaults everything else builds on.                 |
 | `library.json` | Runtime-agnostic packages (no DOM, no Node, no Workers types). |
 | `worker.json`  | Cloudflare Workers. Types come from `wrangler types`.          |
+| `react.json`   | React code that runs in the browser and is server-rendered.    |
 
 Worker packages run `wrangler types` (the `typegen` task) to generate
 `worker-configuration.d.ts`, which holds both the runtime types for the
