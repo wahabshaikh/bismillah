@@ -316,6 +316,22 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
+  tooling/deploy:
+    dependencies:
+      jsonc-parser:
+        specifier: 3.3.1
+        version: 3.3.1
+    devDependencies:
+      '@bismillah/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.0
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   tooling/tsconfig: {}
 
   tooling/wrangler:

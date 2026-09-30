@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [lint, typecheck, test, build]
+        task: [lint, typecheck, test, build, "deploy:dry-run"]
     steps:
       - uses: actions/checkout@v7
 
