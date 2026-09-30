@@ -3,8 +3,9 @@
 An open-source, multi-platform starter kit built entirely on Cloudflare, sized to
 run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/).
 
-> **Status:** the monorepo, tooling, CI, the API Worker, the web app and the mobile app are in
-> place; background jobs (Queues, Cron Triggers, Durable Objects) come next.
+> **Status:** the monorepo, tooling, CI, the API Worker, the web app, the mobile app and
+> background work (Queues, Cron Triggers, Durable Objects) are in place; a one-command deploy
+> and a budget guide come next.
 
 ## Stack
 
@@ -22,13 +23,16 @@ run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/p
 | Database        | [D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team) migrations |
 | Auth            | [Better Auth](https://www.better-auth.com), sessions in Workers KV       |
 | Files           | [R2](https://developers.cloudflare.com/r2/)                              |
+| Background jobs | [Queues](https://developers.cloudflare.com/queues/) + [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/) |
+| Realtime        | [Durable Objects](https://developers.cloudflare.com/durable-objects/) with hibernatable WebSockets |
 | CI              | GitHub Actions: lint, typecheck, test, build                             |
 
 ## Layout
 
 ```
 apps/
-  api/                API Worker: Hono, D1 + Drizzle, Better Auth, KV, R2 (see apps/api/README.md)
+  api/                API Worker: Hono, D1 + Drizzle, Better Auth, KV, R2, Queues, Cron,
+                      Durable Objects (see apps/api/README.md)
   web/                Web Worker: TanStack Start + static assets (see apps/web/README.md)
   mobile/             Expo app for iOS and Android (see apps/mobile/README.md)
 packages/
@@ -53,8 +57,10 @@ cp apps/api/.dev.vars.example apps/api/.dev.vars   # then set BETTER_AUTH_SECRET
 pnpm dev          # API on http://localhost:8787, web app on http://localhost:3000
 ```
 
-Open http://localhost:3000, create an account and upload a file: the whole stack (D1, KV, R2,
-rate limiting) runs locally in `workerd`, with no Cloudflare account needed until you deploy.
+Open http://localhost:3000, create an account and upload a file. It shows as processing until
+a queued job checksums it, and the change is pushed to every open tab over a WebSocket. The whole
+stack (D1, KV, R2, Queues, Durable Objects, rate limiting) runs locally in `workerd`, with no
+Cloudflare account needed until you deploy.
 
 For the mobile app, run the API on your network and start Metro in another terminal, then open
 the app in Expo Go or a simulator (details in [apps/mobile/README.md](apps/mobile/README.md)):

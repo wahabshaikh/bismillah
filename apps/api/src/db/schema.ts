@@ -73,7 +73,10 @@ export const verification = sqliteTable(
   (t) => [index("verification_identifier_idx").on(t.identifier)],
 );
 
-/** Metadata for objects stored in the UPLOADS R2 bucket. */
+/**
+ * Metadata for objects stored in the UPLOADS R2 bucket. `processedAt` stays null
+ * until the `upload.process` job (src/jobs/process-upload.ts) has checksummed the file.
+ */
 export const upload = sqliteTable(
   "upload",
   {
@@ -85,9 +88,15 @@ export const upload = sqliteTable(
     filename: text("filename").notNull(),
     contentType: text("content_type").notNull(),
     size: integer("size").notNull(),
+    sha256: text("sha256"),
+    processedAt: integer("processed_at", { mode: "timestamp_ms" }),
     createdAt: timestamps.createdAt,
   },
-  (t) => [index("upload_user_id_created_at_idx").on(t.userId, t.createdAt)],
+  (t) => [
+    index("upload_user_id_created_at_idx").on(t.userId, t.createdAt),
+    // Lets the scheduled sweep find unprocessed uploads without a table scan.
+    index("upload_pending_idx").on(t.processedAt, t.createdAt),
+  ],
 );
 
 export type User = typeof user.$inferSelect;
