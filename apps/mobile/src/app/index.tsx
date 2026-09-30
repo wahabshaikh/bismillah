@@ -5,11 +5,12 @@ import { Stack } from "expo-router";
 import * as Sharing from "expo-sharing";
 import { useState } from "react";
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Plan } from "../components/plan.tsx";
 import { Button, ErrorMessage, Muted, Title } from "../components/ui.tsx";
 import { api, downloadUpload, type Upload, uploadFile } from "../lib/api.ts";
 import { authClient } from "../lib/auth.ts";
 import { formatBytes } from "../lib/format.ts";
-import { uploadsQuery } from "../lib/queries.ts";
+import { billingQuery, uploadsQuery } from "../lib/queries.ts";
 import { useColors } from "../theme.ts";
 
 export default function Files() {
@@ -83,7 +84,15 @@ export default function Files() {
         contentContainerStyle={styles.list}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
-          <RefreshControl refreshing={uploads.isRefetching} onRefresh={() => uploads.refetch()} />
+          <RefreshControl
+            refreshing={uploads.isRefetching}
+            onRefresh={() =>
+              Promise.all([
+                uploads.refetch(),
+                queryClient.invalidateQueries({ queryKey: billingQuery.queryKey }),
+              ])
+            }
+          />
         }
         ListHeaderComponent={
           <View style={styles.header}>
@@ -91,6 +100,7 @@ export default function Files() {
               <Title>Hi, {session?.user.name}</Title>
               <Muted>Signed in as {session?.user.email}</Muted>
             </View>
+            <Plan />
             <Button
               onPress={() => upload.mutate()}
               loading={upload.isPending && progress === undefined}

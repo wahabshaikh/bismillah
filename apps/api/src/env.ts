@@ -19,3 +19,14 @@ export type AuthedEnv = AppEnv & {
     session: AuthSession["session"];
   };
 };
+
+// Optional secrets aren't in wrangler.jsonc's `secrets.required`, so `wrangler types` doesn't
+// know them. Payments stay off until they're set (see docs/payments.md).
+declare global {
+  interface Env {
+    /** Whop company API key, for creating checkouts. */
+    WHOP_API_KEY?: string;
+    /** Signing secret of the Whop webhook pointed at `/webhooks/whop` (`ws_…`). */
+    WHOP_WEBHOOK_SECRET?: string;
+  }
+}

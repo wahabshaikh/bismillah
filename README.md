@@ -4,7 +4,7 @@ An open-source, multi-platform starter kit built entirely on Cloudflare, sized t
 run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/).
 
 API, web app and mobile app on one typed API, with auth, a database, file uploads, background
-jobs, realtime events and transactional email, all on Cloudflare.
+jobs, realtime events, transactional email and payments, all on Cloudflare.
 
 ## Quickstart
 
@@ -45,6 +45,7 @@ on the $5 plan (a worked example of 3,000 daily users fits).
 | Background jobs | [Queues](https://developers.cloudflare.com/queues/) + [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/) |
 | Realtime        | [Durable Objects](https://developers.cloudflare.com/durable-objects/) with hibernatable WebSockets |
 | Email           | [Cloudflare Email Service](https://developers.cloudflare.com/email-service/): verification, password reset and password-changed emails, sent from the queue |
+| Payments        | [Whop](https://whop.com) hosted checkout, with memberships synced to D1 by a signed webhook (optional, [docs/payments.md](docs/payments.md)) |
 | CI              | GitHub Actions: lint, typecheck, test, build, deploy dry run             |
 | Deploy          | `pnpm run deploy`: one command, idempotent, CI-friendly                  |
 
@@ -67,6 +68,7 @@ tooling/
 docs/
   deploy.md           Deploying, from CI too
   budget.md           What each service costs against the $5 plan
+  payments.md         Selling a plan with Whop
 ```
 
 Internal packages export their TypeScript source directly (`"exports": "./src/index.ts"`),

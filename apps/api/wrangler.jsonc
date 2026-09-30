@@ -27,7 +27,12 @@
     // Sender for transactional email, on a domain onboarded to Cloudflare Email Service
     // (e.g. "noreply@example.com"). Empty means emails are logged instead of sent, which is
     // what you want locally. `pnpm run deploy --domain` sets it to noreply@<domain>.
-    "EMAIL_FROM": ""
+    "EMAIL_FROM": "",
+    // Payments (docs/payments.md): the Whop plan sold by POST /v1/billing/checkout
+    // (`plan_…`). Empty turns payments off. The API key and webhook secret are secrets.
+    "WHOP_PLAN_ID": "",
+    // https://sandbox-api.whop.com/api/v1 to test with Whop's sandbox.
+    "WHOP_API_URL": "https://api.whop.com/api/v1"
   },
   // Set with `wrangler secret put`; locally, copy .dev.vars.example to .dev.vars.
   "secrets": {

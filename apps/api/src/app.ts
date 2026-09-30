@@ -8,8 +8,10 @@ import { createDb } from "./db/index.ts";
 import type { AppEnv, AuthedEnv } from "./env.ts";
 import { loadSession, requireAuth } from "./middleware/auth.ts";
 import { rateLimit } from "./middleware/rate-limit.ts";
+import { billing } from "./routes/billing.ts";
 import { events } from "./routes/events.ts";
 import { uploads } from "./routes/uploads.ts";
+import { webhooks } from "./routes/webhooks.ts";
 
 const app = new Hono<AppEnv>();
 
@@ -43,11 +45,15 @@ app.post(
 );
 app.on(["GET", "POST"], "/api/auth/*", (c) => c.var.auth.handler(c.req.raw));
 
+// Signed by the sender rather than authenticated by a session (see src/routes/webhooks.ts).
+app.route("/webhooks", webhooks);
+
 const v1 = new Hono<AuthedEnv>()
   .use(loadSession, requireAuth)
   .get("/me", (c) => c.json({ user: c.var.user, session: c.var.session }))
   .route("/uploads", uploads)
-  .route("/events", events);
+  .route("/events", events)
+  .route("/billing", billing);
 
 // Cast is safe: `requireAuth` guarantees the narrowed variables inside `v1`.
 app.route("/v1", v1 as unknown as Hono<AppEnv>);
@@ -64,5 +70,6 @@ app.onError((error, c) => {
 
 export default app;
 export type AppType = typeof v1;
+export type { SubscriptionJson } from "./billing/subscription.ts";
 export type { UploadJson } from "./lib/upload-json.ts";
 export type { UserEvent } from "./realtime/events.ts";

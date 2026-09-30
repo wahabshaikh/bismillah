@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "dev": "pnpm db:migrate:local && wrangler dev",
+    "dev": "pnpm db:migrate:local && node scripts/dev.ts",
     "deploy": "pnpm db:migrate:remote && wrangler deploy",
     "typegen": "wrangler types",
     "types": "tsc -p tsconfig.types.json",

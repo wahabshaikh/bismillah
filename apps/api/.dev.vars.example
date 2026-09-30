@@ -3,3 +3,7 @@ BETTER_AUTH_SECRET="replace-me-with-at-least-32-random-characters"
 # Leave unset to print emails in the terminal. To really send, use an address on a domain
 # onboarded to Cloudflare Email Service, and set "remote": true on the send_email binding.
 # EMAIL_FROM="noreply@example.com"
+# Payments (docs/payments.md). Leave unset and the app runs without them.
+# WHOP_API_KEY="apik_..."
+# WHOP_WEBHOOK_SECRET="ws_..."
+# WHOP_PLAN_ID="plan_..."

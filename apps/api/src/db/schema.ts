@@ -99,5 +99,33 @@ export const upload = sqliteTable(
   ],
 );
 
+/**
+ * Whop memberships bought through `POST /v1/billing/checkout`, one row per membership,
+ * kept in sync by the webhook in src/routes/webhooks.ts. `id` is Whop's membership ID
+ * (`mem_…`); `whopUpdatedAt` is Whop's own `updated_at`, so an older, retried webhook
+ * never overwrites a newer state.
+ */
+export const subscription = sqliteTable(
+  "subscription",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    planId: text("plan_id").notNull(),
+    productId: text("product_id").notNull(),
+    status: text("status").notNull(),
+    cancelAtPeriodEnd: integer("cancel_at_period_end", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    currentPeriodEnd: integer("current_period_end", { mode: "timestamp_ms" }),
+    manageUrl: text("manage_url"),
+    whopUpdatedAt: integer("whop_updated_at", { mode: "timestamp_ms" }).notNull(),
+    ...timestamps,
+  },
+  (t) => [index("subscription_user_id_idx").on(t.userId)],
+);
+
 export type User = typeof user.$inferSelect;
 export type Upload = typeof upload.$inferSelect;
+export type Subscription = typeof subscription.$inferSelect;

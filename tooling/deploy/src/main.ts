@@ -3,7 +3,8 @@
 // 1. Signs in to Cloudflare (or uses CLOUDFLARE_API_TOKEN).
 // 2. Creates the D1 database if it is missing and applies migrations, before any code ships.
 // 3. Turns on Cloudflare Email Service sending for your domain, for transactional email.
-// 4. Uploads required secrets the API does not have yet (prompting, or from the environment).
+// 4. Uploads required secrets the API does not have yet (prompting, or from the environment),
+//    and the optional Whop secrets when they're in the environment.
 // 5. Deploys the API. Wrangler creates the KV namespace, R2 bucket and queue on first deploy.
 // 6. Builds the web app against the API's URL and deploys it.
 import { randomBytes } from "node:crypto";
@@ -57,7 +58,8 @@ const USAGE = `Usage: pnpm run deploy [--domain example.com | --workers-dev] [--
 
 Answers are saved to .deploy.json, so later deploys need no flags. In CI, set
 CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and DEPLOY_DOMAIN, plus each required secret
-(e.g. BETTER_AUTH_SECRET) for the first deploy.`;
+(e.g. BETTER_AUTH_SECRET) for the first deploy. WHOP_API_KEY, WHOP_WEBHOOK_SECRET and
+WHOP_PLAN_ID turn on payments (docs/payments.md).`;
 
 function step(message: string) {
   console.log(`\n\u001b[1m▸ ${message}\u001b[0m`);
@@ -174,9 +176,21 @@ async function ensureDatabase(api: WorkerConfig) {
   await wrangler(apiDir, ["d1", "create", db.database_name, "--update-config=false"]);
 }
 
+/** Secrets the API runs without. Uploaded when set in the environment (docs/payments.md). */
+const OPTIONAL_SECRETS = ["WHOP_API_KEY", "WHOP_WEBHOOK_SECRET"];
+
 async function collectSecrets(api: WorkerConfig): Promise<Record<string, string>> {
+  const values: Record<string, string> = {};
+  for (const name of OPTIONAL_SECRETS) {
+    const fromEnv = process.env[name];
+    if (fromEnv) {
+      console.log(`${name}: using the value from your environment.`);
+      values[name] = fromEnv;
+    }
+  }
+
   const required = api.secrets?.required ?? [];
-  if (required.length === 0) return {};
+  if (required.length === 0) return values;
   step("Checking the API's secrets");
   // Fails when the Worker has never been deployed, which means it has no secrets yet.
   const list = await wrangler(apiDir, ["secret", "list", "--format", "json"], {
@@ -187,10 +201,9 @@ async function collectSecrets(api: WorkerConfig): Promise<Record<string, string>
   const missing = missingSecrets(required, existing);
   if (missing.length === 0) {
     console.log(`All set: ${required.join(", ")}.`);
-    return {};
+    return values;
   }
 
-  const values: Record<string, string> = {};
   for (const name of missing) {
     const fromEnv = process.env[name];
     if (fromEnv) {
@@ -250,6 +263,10 @@ async function deployApi(
     `TRUSTED_ORIGINS:${trustedOrigins(target.webUrl, mobileScheme)}`,
     "--var",
     `EMAIL_FROM:${emailFrom}`,
+    // Otherwise the value in wrangler.jsonc is deployed.
+    ...(process.env["WHOP_PLAN_ID"]
+      ? ["--var", `WHOP_PLAN_ID:${process.env["WHOP_PLAN_ID"]}`]
+      : []),
     ...(target.apiHost ? ["--domain", target.apiHost] : []),
     ...extra,
   ];
@@ -336,6 +353,7 @@ async function main() {
   console.log(
     `  Email    ${emailFrom ? `sent from ${emailFrom}` : "logged, not sent (no sending domain)"}`,
   );
+  console.log(`  Payments Whop webhook URL ${target.apiUrl}/webhooks/whop (see docs/payments.md)`);
   console.log(
     `  Mobile   build with EXPO_PUBLIC_API_URL=${target.apiUrl} (see apps/mobile/README.md)`,
   );
