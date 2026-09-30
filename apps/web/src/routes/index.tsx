@@ -12,7 +12,7 @@ const stack = [
   ["Web", "TanStack Start, server-rendered in a Worker"],
   ["API", "Hono on Workers, typed end to end over RPC"],
   ["Data", "D1 + Drizzle, sessions and cache in KV, files in R2"],
-  ["Auth", "Better Auth with email and password"],
+  ["Auth", "Better Auth with email and password, plus verification and reset emails"],
 ] as const;
 
 function Home() {

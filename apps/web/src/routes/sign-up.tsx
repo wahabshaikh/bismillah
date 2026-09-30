@@ -18,7 +18,8 @@ function SignUp() {
       title="Create an account"
       description="Email and password, stored in D1 by Better Auth."
       submitLabel="Sign up"
-      withName
+      fields={["name", "email", "password"]}
+      newPassword
       footer={
         <>
           Already have an account?{" "}
@@ -28,7 +29,13 @@ function SignUp() {
         </>
       }
       onSubmit={async ({ name, email, password }) => {
-        const { error } = await authClient.signUp.email({ name, email, password });
+        // The verification email links back to the dashboard once the address is confirmed.
+        const { error } = await authClient.signUp.email({
+          name,
+          email,
+          password,
+          callbackURL: `${window.location.origin}/dashboard`,
+        });
         if (error) return error.message ?? "Sign up failed";
         await router.navigate({ to: safeRedirect(search.redirect) });
         return undefined;

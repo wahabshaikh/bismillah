@@ -29,9 +29,10 @@ You don't need to create anything in the dashboard first.
 | 2. Domain | Asks for your domain, or uses `--domain`, `--workers-dev` or `DEPLOY_DOMAIN`. Your answer is saved in `.deploy.json` (gitignored). | Uses the saved answer |
 | 3. Database | Creates the D1 database named in `apps/api/wrangler.jsonc` if it doesn't exist. | No-op |
 | 4. Migrations | `wrangler d1 migrations apply DB --remote`, before any new code ships. Wrangler shows the pending migrations and asks you to confirm. | Applies only new ones |
-| 5. Secrets | Checks every name under `secrets.required` in `apps/api/wrangler.jsonc`. For each missing one, it uses the environment variable of the same name, or asks you to paste a value (Enter generates a random one, which is right for `BETTER_AUTH_SECRET`). | Skipped once set |
-| 6. API | `wrangler deploy` with `BETTER_AUTH_URL` and `TRUSTED_ORIGINS` set for production and the `api.` custom domain attached. On the first deploy Wrangler creates the KV namespace, R2 bucket and queue, registers the Durable Object class and the hourly Cron Trigger. | Updates in place |
-| 7. Web app | Builds with `VITE_API_URL` pointing at the API, then deploys with the `app.` custom domain. | Updates in place |
+| 5. Email | With a domain, turns on [Email Sending](https://developers.cloudflare.com/email-service/) for it (`wrangler email sending enable`) so the API can send from `noreply@<domain>`. If that fails, or on workers.dev, the API logs emails instead of sending them. | Skipped once on |
+| 6. Secrets | Checks every name under `secrets.required` in `apps/api/wrangler.jsonc`. For each missing one, it uses the environment variable of the same name, or asks you to paste a value (Enter generates a random one, which is right for `BETTER_AUTH_SECRET`). | Skipped once set |
+| 7. API | `wrangler deploy` with `BETTER_AUTH_URL`, `TRUSTED_ORIGINS` and `EMAIL_FROM` set for production and the `api.` custom domain attached. On the first deploy Wrangler creates the KV namespace, R2 bucket and queue, registers the Durable Object class and the hourly Cron Trigger. | Updates in place |
+| 8. Web app | Builds with `VITE_API_URL` pointing at the API, then deploys with the `app.` custom domain. | Updates in place |
 
 It prints the URLs at the end, plus the `EXPO_PUBLIC_API_URL` to build the mobile app with.
 
@@ -59,10 +60,11 @@ The script never prompts when it isn't attached to a terminal. Give it everythin
 
 | Variable | Needed |
 | -------- | ------ |
-| `CLOUDFLARE_API_TOKEN` | Always. Give it Edit on Workers Scripts, Workers KV, Workers R2, D1 and Queues for the account, and Workers Routes plus DNS on your domain's zone. |
+| `CLOUDFLARE_API_TOKEN` | Always. Give it Edit on Workers Scripts, Workers KV, Workers R2, D1, Queues and Email Sending for the account, and Workers Routes plus DNS on your domain's zone. |
 | `CLOUDFLARE_ACCOUNT_ID` | Always |
 | `DEPLOY_DOMAIN` | Unless you want `*.workers.dev` |
 | `BETTER_AUTH_SECRET` | First deploy only (or whenever a required secret is missing) |
+| `EMAIL_FROM` | Optional: the sender address, if not `noreply@<DEPLOY_DOMAIN>` |
 
 ```yaml
 # .github/workflows/deploy.yml (example)
@@ -117,6 +119,9 @@ new, empty resource.
 
 - **"Couldn't find … workers.dev URL"**: workers.dev is turned off for the Worker. Deploy with
   `--domain`, or turn it on under the Worker's Settings → Domains & Routes.
+- **Emails aren't arriving**: check the domain under **Email Service → Email Sending** in the
+  dashboard. Its DNS records must be verified, and new accounts start with a small daily
+  sending limit that grows over time. Failed sends show in the API's logs as `job failed`.
 - **Custom domain errors**: the domain has to be an active zone on the same Cloudflare account.
   `api.` and `app.` must not already have DNS records pointing elsewhere.
 - **A step fails halfway**: fix the cause and run the command again. Every step checks what

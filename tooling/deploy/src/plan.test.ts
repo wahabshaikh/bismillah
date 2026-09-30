@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   domainTarget,
+  emailSender,
   missingSecrets,
   normalizeDomain,
   parseArgs,
   parseWorkersDevSubdomain,
+  sendingEnabled,
   trustedOrigins,
   workersDevTarget,
 } from "./plan.ts";
@@ -86,5 +88,25 @@ describe("parseArgs", () => {
     assert.throws(() => parseArgs(["--prod"]), /Unknown option/);
     assert.throws(() => parseArgs(["--domain"]), /needs a value/);
     assert.throws(() => parseArgs(["--domain=a.com", "--workers-dev"]), /not both/);
+  });
+});
+
+describe("email", () => {
+  it("sends from noreply@ the domain, unless EMAIL_FROM overrides it", () => {
+    assert.equal(emailSender("example.com"), "noreply@example.com");
+    assert.equal(emailSender("example.com", " hi@example.com "), "hi@example.com");
+    assert.equal(emailSender("example.com", ""), "noreply@example.com");
+  });
+
+  it("logs instead of sending on workers.dev", () => {
+    assert.equal(emailSender(null), "");
+  });
+
+  it("reads whether sending is on from wrangler's settings output", () => {
+    const settings = (enabled: boolean) =>
+      `Email Sending for example.com:\n  Enabled:            ${enabled}\n  Tag:                abc\n`;
+    assert.equal(sendingEnabled(settings(true)), true);
+    assert.equal(sendingEnabled(settings(false)), false);
+    assert.equal(sendingEnabled(""), false);
   });
 });

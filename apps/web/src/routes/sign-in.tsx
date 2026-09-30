@@ -24,6 +24,10 @@ function SignIn() {
           <Link to="/sign-up" search={search} className="text-primary hover:underline">
             Sign up
           </Link>
+          {" · "}
+          <Link to="/forgot-password" className="text-primary hover:underline">
+            Forgot password?
+          </Link>
         </>
       }
       onSubmit={async ({ email, password }) => {
