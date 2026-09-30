@@ -19,8 +19,9 @@
     "APP_NAME": "bismillah",
     // Public URL of this Worker; Better Auth uses it for callbacks and cookies.
     "BETTER_AUTH_URL": "http://localhost:8787",
-    // Comma-separated origins allowed to call the API with credentials (the web app).
-    "TRUSTED_ORIGINS": "http://localhost:3000",
+    // Comma-separated origins allowed to call the API with credentials: the web app, the
+    // mobile app's URL scheme and, for local development only, Expo Go (`exp://`).
+    "TRUSTED_ORIGINS": "http://localhost:3000,bismillah://,exp://",
     // Largest upload accepted by POST /v1/uploads, in bytes (10 MiB).
     "MAX_UPLOAD_BYTES": "10485760"
   },

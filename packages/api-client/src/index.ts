@@ -8,23 +8,29 @@ export interface ApiClientOptions {
   baseUrl: string;
   /** Custom fetch, e.g. a service binding's `fetch` or a test double. */
   fetch?: typeof fetch;
-  /** Extra headers for every request, e.g. a bearer token on mobile. */
+  /** Extra headers for every request, e.g. the session cookie on mobile. */
   headers?:
     | Record<string, string>
     | (() => Record<string, string> | Promise<Record<string, string>>);
+  /**
+   * Defaults to `"include"` so browsers send the API's session cookie. Native apps pass
+   * `"omit"` and send the cookie in `headers` instead, keeping the platform's own cookie
+   * jar out of the way.
+   */
+  credentials?: RequestCredentials;
 }
 
 /**
  * Creates a client for the API's `/v1` routes, typed end to end from the Hono app.
  *
- * Sessions are cookies set by the API origin, so browser requests always send
- * credentials; the calling origin must be listed in the API's `TRUSTED_ORIGINS`.
+ * Sessions are cookies set by the API origin, so browser requests send credentials
+ * by default; the calling origin must be listed in the API's `TRUSTED_ORIGINS`.
  */
 export function createApiClient(options: ApiClientOptions) {
   return hc<AppType>(new URL("/v1", options.baseUrl).toString(), {
     ...(options.fetch && { fetch: options.fetch }),
     ...(options.headers && { headers: options.headers }),
-    init: { credentials: "include" },
+    init: { credentials: options.credentials ?? "include" },
   });
 }
 

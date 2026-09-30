@@ -6,6 +6,7 @@ packages:
 # One version of each shared dependency across the monorepo.
 # Reference with "catalog:" in package.json.
 catalog:
+  "@better-auth/expo": 1.7.6
   "@biomejs/biome": 2.5.14
   "@cloudflare/vite-plugin": 1.62.2
   "@cloudflare/vitest-pool-workers": 0.22.0
