@@ -1,0 +1,24 @@
+{
+  "name": "@bismillah/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared React components and design tokens (Tailwind CSS v4) for the web app.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./theme.css": "./src/theme.css"
+  },
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@bismillah/tsconfig": "workspace:*",
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:"
+  }
+}

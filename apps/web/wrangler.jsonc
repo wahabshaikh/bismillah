@@ -1,0 +1,19 @@
+// Shared keys (compatibility date/flags, observability, source maps) come from
+// tooling/wrangler/base.jsonc and are enforced by `pnpm check:wrangler`.
+//
+// The Cloudflare Vite plugin builds this Worker: `vite build` writes the server bundle
+// and the client assets to dist/, and `wrangler deploy` uploads both. Static assets
+// are served straight from Cloudflare's edge and never invoke the Worker, so they
+// don't count against the plan's request quota.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bismillah-web",
+  "main": "@tanstack/react-start/server-entry",
+  "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "upload_source_maps": true
+}

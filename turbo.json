@@ -7,12 +7,17 @@
       "inputs": ["wrangler.jsonc", ".dev.vars.example"],
       "outputs": ["worker-configuration.d.ts"]
     },
+    "types": {
+      "dependsOn": ["typegen"],
+      "inputs": ["src/**", "tsconfig*.json", "wrangler.jsonc"],
+      "outputs": ["dist/types/**"]
+    },
     "build": {
       "dependsOn": ["^build", "typegen"],
       "outputs": ["dist/**"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck", "typegen"]
+      "dependsOn": ["^typecheck", "^types", "typegen"]
     },
     "test": {
       "dependsOn": ["typegen"],

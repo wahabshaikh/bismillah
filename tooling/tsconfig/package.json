@@ -10,6 +10,7 @@
   "exports": {
     "./base.json": "./base.json",
     "./library.json": "./library.json",
-    "./worker.json": "./worker.json"
+    "./worker.json": "./worker.json",
+    "./react.json": "./react.json"
   }
 }
