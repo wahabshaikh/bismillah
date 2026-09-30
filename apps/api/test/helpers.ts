@@ -1,4 +1,7 @@
-import { exports } from "cloudflare:workers";
+import { createExecutionContext, createMessageBatch, getQueueResult } from "cloudflare:test";
+import { env, exports } from "cloudflare:workers";
+import worker from "../src/index.ts";
+import type { Job } from "../src/jobs/index.ts";
 
 export const BASE = "http://localhost:8787";
 
@@ -28,4 +31,15 @@ export async function signUp(overrides: { email?: string; ip?: string } = {}) {
     .map((c) => c.split(";")[0])
     .join("; ");
   return { email, cookie, body: (await response.json()) as { user: { id: string } } };
+}
+
+/** Delivers `jobs` to the queue consumer as one batch and returns the ack/retry result. */
+export async function runJobs(jobs: Job[]) {
+  const batch = createMessageBatch<Job>(
+    "bismillah-jobs",
+    jobs.map((body, i) => ({ id: String(i), timestamp: new Date(), attempts: 1, body })),
+  );
+  const ctx = createExecutionContext();
+  await worker.queue(batch, env);
+  return getQueueResult(batch, ctx);
 }

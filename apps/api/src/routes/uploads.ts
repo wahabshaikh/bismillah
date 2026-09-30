@@ -4,7 +4,10 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { schema } from "../db/index.ts";
 import type { AuthedEnv } from "../env.ts";
+import { enqueue } from "../jobs/index.ts";
+import { uploadJson } from "../lib/upload-json.ts";
 import { validate } from "../lib/validation.ts";
+import { publish } from "../realtime/events.ts";
 
 const { upload } = schema;
 
@@ -20,20 +23,13 @@ const listQuery = z.object({
 
 const idParam = z.object({ id: z.uuid() });
 
-function toJson(row: typeof upload.$inferSelect) {
-  return {
-    id: row.id,
-    filename: row.filename,
-    contentType: row.contentType,
-    size: row.size,
-    createdAt: row.createdAt.toISOString(),
-  };
-}
-
 /**
  * Files stream straight from the request body into R2, so a Worker never holds a
  * whole upload in memory. Send the bytes as the raw body with Content-Type and
  * Content-Length set: `POST /v1/uploads?filename=cat.png`.
+ *
+ * The response comes back as soon as the file is stored, with `status: "processing"`.
+ * An `upload.process` job then checksums it, and `GET /v1/events` pushes the result.
  */
 export const uploads = new Hono<AuthedEnv>()
   .post("/", validate("query", createQuery), async (c) => {
@@ -64,7 +60,16 @@ export const uploads = new Hono<AuthedEnv>()
         .values({ id, userId: c.var.user.id, key, filename, contentType, size })
         .returning();
       if (!row) throw new Error("Insert returned no row");
-      return c.json(toJson(row), 201);
+      const json = uploadJson(row);
+      // Neither step should fail the upload: if the job is lost, the hourly sweep
+      // in src/jobs/scheduled.ts enqueues it again.
+      c.executionCtx.waitUntil(
+        Promise.allSettled([
+          enqueue(c.env, { type: "upload.process", uploadId: id }),
+          publish(c.env, c.var.user.id, { type: "upload.created", upload: json }),
+        ]).then(logRejections),
+      );
+      return c.json(json, 201);
     } catch (error) {
       await c.env.UPLOADS.delete(key);
       throw error;
@@ -85,13 +90,13 @@ export const uploads = new Hono<AuthedEnv>()
       .limit(limit);
     const last = rows.at(-1);
     return c.json({
-      items: rows.map(toJson),
+      items: rows.map(uploadJson),
       nextCursor: rows.length === limit && last ? last.createdAt.getTime() : null,
     });
   })
   .get("/:id", validate("param", idParam), async (c) => {
     const row = await findOwned(c.var.db, c.req.valid("param").id, c.var.user.id);
-    return c.json(toJson(row));
+    return c.json(uploadJson(row));
   })
   .get("/:id/content", validate("param", idParam), async (c) => {
     const row = await findOwned(c.var.db, c.req.valid("param").id, c.var.user.id);
@@ -115,6 +120,9 @@ export const uploads = new Hono<AuthedEnv>()
     const row = await findOwned(c.var.db, c.req.valid("param").id, c.var.user.id);
     await c.env.UPLOADS.delete(row.key);
     await c.var.db.delete(upload).where(eq(upload.id, row.id));
+    c.executionCtx.waitUntil(
+      publish(c.env, c.var.user.id, { type: "upload.deleted", id: row.id }).catch(console.error),
+    );
     return c.body(null, 204);
   });
 
@@ -124,4 +132,10 @@ async function findOwned(db: AuthedEnv["Variables"]["db"], id: string, userId: s
   });
   if (!row) throw new HTTPException(404, { message: "Upload not found" });
   return row;
+}
+
+function logRejections(results: PromiseSettledResult<unknown>[]) {
+  for (const result of results) {
+    if (result.status === "rejected") console.error(result.reason);
+  }
 }

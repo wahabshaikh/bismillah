@@ -23,6 +23,26 @@ await unwrap(api.uploads[":id"].$delete({ param: { id } }));
 - `unwrap` returns the typed success body, or throws an `ApiError` with the HTTP `status` and
   the API's `{ error }` message.
 
+## Realtime events
+
+`subscribeToEvents` streams the signed-in user's events from `GET /v1/events` (upload created,
+processed, deleted), with keepalive pings and exponential-backoff reconnects:
+
+```ts
+import { subscribeToEvents } from "@bismillah/api-client";
+
+const stop = subscribeToEvents({
+  baseUrl: "http://localhost:8787",
+  onEvent: (event) => console.log(event.type),
+  onStatus: (status) => console.log(status), // "connecting" | "open" | "closed"
+});
+```
+
+Browsers send the session cookie with the handshake. On native, pass `connect` to open the
+socket with the cookie as a header: `(url) => new WebSocket(url, undefined, { headers: { cookie } })`.
+The web app's [`useLiveUploads`](../../apps/web/src/lib/live.ts) shows how to apply events to a
+TanStack Query cache.
+
 The types come from `@bismillah/api/app`, declaration files the API emits with `pnpm types`
 (Turborepo runs it before type-checking this package), so this package never type-checks the
 API's Worker source against its own globals.

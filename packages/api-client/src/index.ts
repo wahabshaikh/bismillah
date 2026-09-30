@@ -72,3 +72,13 @@ function errorMessage(data: unknown): string | undefined {
   }
   return typeof data === "string" && data ? data : undefined;
 }
+
+export {
+  type EventSocket,
+  type EventStreamOptions,
+  type EventStreamStatus,
+  eventsUrl,
+  subscribeToEvents,
+  type UploadJson,
+  type UserEvent,
+} from "./events.ts";

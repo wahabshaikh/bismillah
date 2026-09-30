@@ -8,6 +8,7 @@ import { createDb } from "./db/index.ts";
 import type { AppEnv, AuthedEnv } from "./env.ts";
 import { loadSession, requireAuth } from "./middleware/auth.ts";
 import { rateLimit } from "./middleware/rate-limit.ts";
+import { events } from "./routes/events.ts";
 import { uploads } from "./routes/uploads.ts";
 
 const app = new Hono<AppEnv>();
@@ -45,7 +46,8 @@ app.on(["GET", "POST"], "/api/auth/*", (c) => c.var.auth.handler(c.req.raw));
 const v1 = new Hono<AuthedEnv>()
   .use(loadSession, requireAuth)
   .get("/me", (c) => c.json({ user: c.var.user, session: c.var.session }))
-  .route("/uploads", uploads);
+  .route("/uploads", uploads)
+  .route("/events", events);
 
 // Cast is safe: `requireAuth` guarantees the narrowed variables inside `v1`.
 app.route("/v1", v1 as unknown as Hono<AppEnv>);
@@ -62,3 +64,5 @@ app.onError((error, c) => {
 
 export default app;
 export type AppType = typeof v1;
+export type { UploadJson } from "./lib/upload-json.ts";
+export type { UserEvent } from "./realtime/events.ts";

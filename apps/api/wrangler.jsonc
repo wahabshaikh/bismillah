@@ -2,8 +2,8 @@
 // tooling/wrangler/base.jsonc and are enforced by `pnpm check:wrangler`.
 //
 // Bindings have no resource IDs on purpose: `wrangler dev` and the tests use local
-// simulators, and `wrangler deploy` provisions the D1 database, KV namespace and
-// R2 bucket on first deploy and writes their IDs back into this file.
+// simulators, and `wrangler deploy` provisions the D1 database, KV namespace, R2
+// bucket and queue on first deploy and writes their IDs back into this file.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "bismillah-api",
@@ -46,6 +46,47 @@
     {
       "binding": "UPLOADS",
       "bucket_name": "bismillah-uploads"
+    }
+  ],
+  // Background jobs (src/jobs/). The same Worker produces and consumes: routes enqueue
+  // with `enqueue(env, job)`, and `queue()` in src/index.ts runs them in batches.
+  "queues": {
+    "producers": [
+      {
+        "binding": "JOBS",
+        "queue": "bismillah-jobs"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "bismillah-jobs",
+        // Up to 10 messages per invocation, or whatever arrived within 5 seconds.
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        // After 3 failed attempts a message is dropped; the hourly sweep in
+        // src/jobs/scheduled.ts re-enqueues anything that was never processed.
+        "max_retries": 3
+      }
+    ]
+  },
+  // Cron Triggers are free. Times are UTC; see src/jobs/scheduled.ts.
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+  // One UserEvents object per user fans realtime events out to that user's open
+  // WebSockets (src/realtime/). SQLite-backed classes are the default for new objects.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "USER_EVENTS",
+        "class_name": "UserEvents"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["UserEvents"]
     }
   ],
   // Workers Rate Limiting is free on every plan and keeps brute-force traffic off D1.
