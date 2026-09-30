@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/worker-configuration.d.ts", "!**/pnpm-lock.yaml"]
+    "includes": ["**", "!**/worker-configuration.d.ts", "!**/pnpm-lock.yaml", "!**/migrations/meta"]
   },
   "formatter": {
     "enabled": true,

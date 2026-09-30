@@ -3,8 +3,8 @@
 An open-source, multi-platform starter kit built entirely on Cloudflare, sized to
 run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/).
 
-> **Status:** foundation only. The monorepo, tooling and CI are in place; the API,
-> web and mobile apps are being built on top of it.
+> **Status:** the monorepo, tooling, CI and the API Worker are in place; the web and
+> mobile apps are being built on top of it.
 
 ## Stack
 
@@ -16,13 +16,17 @@ run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/p
 | Lint + format   | [Biome](https://biomejs.dev)                                             |
 | Tests           | [Vitest](https://vitest.dev), Workers run in `workerd` via `@cloudflare/vitest-pool-workers` |
 | Runtime         | [Cloudflare Workers](https://developers.cloudflare.com/workers/)         |
+| API             | [Hono](https://hono.dev)                                                 |
+| Database        | [D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team) migrations |
+| Auth            | [Better Auth](https://www.better-auth.com), sessions in Workers KV       |
+| Files           | [R2](https://developers.cloudflare.com/r2/)                              |
 | CI              | GitHub Actions: lint, typecheck, test                                    |
 
 ## Layout
 
 ```
 apps/
-  api/                Cloudflare Worker (wrangler.jsonc, src/, test/)
+  api/                API Worker: Hono, D1 + Drizzle, Better Auth, KV, R2 (see apps/api/README.md)
 packages/
   core/               Runtime-agnostic helpers shared by every app
 tooling/
@@ -39,6 +43,7 @@ Requires Node.js 22.18+ (see `.nvmrc`) and pnpm 10 (`corepack enable`).
 
 ```sh
 pnpm install
+cp apps/api/.dev.vars.example apps/api/.dev.vars
 pnpm dev          # run every app locally
 ```
 

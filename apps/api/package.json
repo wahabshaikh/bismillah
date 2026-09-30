@@ -2,23 +2,33 @@
   "name": "@bismillah/api",
   "version": "0.0.0",
   "private": true,
-  "description": "API Worker.",
+  "description": "API Worker: Hono, D1 + Drizzle, Better Auth, KV and R2.",
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "pnpm db:migrate:local && wrangler dev",
+    "deploy": "pnpm db:migrate:remote && wrangler deploy",
     "typegen": "wrangler types",
     "typecheck": "tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@bismillah/core": "workspace:*"
+    "@bismillah/core": "workspace:*",
+    "@hono/zod-validator": "0.9.1",
+    "better-auth": "1.7.6",
+    "drizzle-orm": "0.45.3",
+    "hono": "4.13.11",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@bismillah/tsconfig": "workspace:*",
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@types/node": "catalog:",
+    "drizzle-kit": "0.31.11",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
