@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "bismillah",
+    "slug": "bismillah",
+    "scheme": "bismillah",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.example.bismillah",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.example.bismillah"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#fcfcfc",
+          "dark": { "backgroundColor": "#0d1014" }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

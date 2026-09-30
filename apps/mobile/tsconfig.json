@@ -1,0 +1,8 @@
+{
+  "extends": "@bismillah/tsconfig/react.json",
+  "compilerOptions": {
+    // Resolve the React Native builds of packages that ship several, as Metro does.
+    "customConditions": ["react-native"]
+  },
+  "include": ["src", ".expo/types/**/*.ts", "expo-env.d.ts"]
+}

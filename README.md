@@ -3,8 +3,8 @@
 An open-source, multi-platform starter kit built entirely on Cloudflare, sized to
 run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/).
 
-> **Status:** the monorepo, tooling, CI, the API Worker and the web app are in place; the
-> mobile app is being built on top of them.
+> **Status:** the monorepo, tooling, CI, the API Worker, the web app and the mobile app are in
+> place; background jobs (Queues, Cron Triggers, Durable Objects) come next.
 
 ## Stack
 
@@ -17,11 +17,12 @@ run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/p
 | Tests           | [Vitest](https://vitest.dev), Workers run in `workerd` via `@cloudflare/vitest-pool-workers` |
 | Runtime         | [Cloudflare Workers](https://developers.cloudflare.com/workers/)         |
 | Web             | [TanStack Start](https://tanstack.com/start) (React 19, SSR in a Worker) + [TanStack Query](https://tanstack.com/query), [Tailwind CSS v4](https://tailwindcss.com) |
+| Mobile          | [Expo](https://expo.dev) SDK 57 + [Expo Router](https://docs.expo.dev/router/introduction/) (iOS and Android) + TanStack Query |
 | API             | [Hono](https://hono.dev), typed end to end with [Hono RPC](https://hono.dev/docs/guides/rpc) |
 | Database        | [D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team) migrations |
 | Auth            | [Better Auth](https://www.better-auth.com), sessions in Workers KV       |
 | Files           | [R2](https://developers.cloudflare.com/r2/)                              |
-| CI              | GitHub Actions: lint, typecheck, test                                    |
+| CI              | GitHub Actions: lint, typecheck, test, build                             |
 
 ## Layout
 
@@ -29,6 +30,7 @@ run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/p
 apps/
   api/                API Worker: Hono, D1 + Drizzle, Better Auth, KV, R2 (see apps/api/README.md)
   web/                Web Worker: TanStack Start + static assets (see apps/web/README.md)
+  mobile/             Expo app for iOS and Android (see apps/mobile/README.md)
 packages/
   api-client/         Typed Hono RPC client for the API, shared by web and mobile
   core/               Runtime-agnostic helpers shared by every app
@@ -54,10 +56,18 @@ pnpm dev          # API on http://localhost:8787, web app on http://localhost:30
 Open http://localhost:3000, create an account and upload a file: the whole stack (D1, KV, R2,
 rate limiting) runs locally in `workerd`, with no Cloudflare account needed until you deploy.
 
+For the mobile app, run the API on your network and start Metro in another terminal, then open
+the app in Expo Go or a simulator (details in [apps/mobile/README.md](apps/mobile/README.md)):
+
+```sh
+pnpm --filter @bismillah/api dev --ip 0.0.0.0
+pnpm --filter @bismillah/mobile start
+```
+
 | Command               | What it does                                                       |
 | --------------------- | ------------------------------------------------------------------ |
 | `pnpm dev`            | Runs all apps in dev mode (`wrangler dev` / Vite + `workerd`)      |
-| `pnpm build`          | Builds every app (the web app's Worker bundle and static assets)   |
+| `pnpm build`          | Builds every app (the web Worker and assets, the mobile JS bundles) |
 | `pnpm typecheck`      | Type-checks every package                                          |
 | `pnpm lint`           | Biome lint + format check, then the Wrangler config check          |
 | `pnpm format`         | Applies Biome formatting and safe fixes                            |

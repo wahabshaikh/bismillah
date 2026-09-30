@@ -18,6 +18,22 @@ describe("createApiClient", () => {
     expect(init?.credentials).toBe("include");
   });
 
+  it("sends headers instead of credentials when asked, as the mobile app does", async () => {
+    const fetch = stubFetch(Response.json({ user: {}, session: {} }));
+    const api = createApiClient({
+      baseUrl: "https://api.example.com",
+      fetch,
+      credentials: "omit",
+      headers: async () => ({ cookie: "better-auth.session_token=abc" }),
+    });
+
+    await unwrap(api.me.$get());
+
+    const init = fetch.mock.calls[0]?.[1];
+    expect(init?.credentials).toBe("omit");
+    expect(new Headers(init?.headers).get("cookie")).toBe("better-auth.session_token=abc");
+  });
+
   it("fills path params", async () => {
     const fetch = stubFetch(new Response(null, { status: 204 }));
     const api = createApiClient({ baseUrl: "https://api.example.com/", fetch });

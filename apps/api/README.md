@@ -38,7 +38,11 @@ curl -b jar -X POST 'localhost:8787/v1/uploads?filename=notes.txt' \
 | `DELETE /v1/uploads/:id`       | yes  | Deletes the file and its metadata                            |
 
 Sessions are cookies, so browser clients call the API with `credentials: "include"` from an
-origin listed in `TRUSTED_ORIGINS`. `AppType` from `src/app.ts` types the `/v1` routes for
+origin listed in `TRUSTED_ORIGINS`. The mobile app uses Better Auth's
+[Expo client](https://www.better-auth.com/docs/integrations/expo), which keeps the session
+cookie in the device's secure storage, sends it as a `Cookie` header, and names the app's URL
+scheme (`bismillah://`) in an `expo-origin` header. `src/lib/expo-origin.ts` checks that
+scheme against `TRUSTED_ORIGINS` like a browser origin. `AppType` from `src/app.ts` types the `/v1` routes for
 Hono's RPC client: `pnpm types` emits it as declarations to `dist/types` (exported as
 `@bismillah/api/app`), and [`@bismillah/api-client`](../../packages/api-client) wraps it for the
 web and mobile apps. Turborepo runs `types` before any dependent package type-checks.
@@ -50,6 +54,7 @@ src/
   index.ts              Worker entry
   app.ts                Hono app: middleware, CORS, error handling, route mounting
   auth.ts               Better Auth config (D1 via Drizzle, sessions in KV)
+  lib/expo-origin.ts    Lets the mobile app's URL scheme pass Better Auth's origin check
   db/schema.ts          Drizzle schema: Better Auth tables + upload metadata
   lib/kv-storage.ts     Better Auth secondary storage on KV
   lib/cache.ts          `cached()` read-through KV cache helper
@@ -80,7 +85,8 @@ pnpm run deploy               # every time after: migrate, then deploy
 ```
 
 Set `BETTER_AUTH_URL` and `TRUSTED_ORIGINS` in `wrangler.jsonc` to your production URLs (or
-override them per environment with an `env` block).
+override them per environment with an `env` block). Keep your mobile app's scheme in
+`TRUSTED_ORIGINS` and drop `exp://`, which only Expo Go uses during development.
 
 ## Staying inside the $5/month plan
 

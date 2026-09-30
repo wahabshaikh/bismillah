@@ -15,9 +15,11 @@ const { items, nextCursor } = await unwrap(api.uploads.$get({ query: { limit: "1
 await unwrap(api.uploads[":id"].$delete({ param: { id } }));
 ```
 
-- `createApiClient` targets the `/v1` routes and always sends credentials, since sessions are
-  cookies on the API origin. Pass `fetch` (a service binding, a test double) or `headers`
-  (a bearer token on mobile) when you need them.
+- `createApiClient` targets the `/v1` routes and sends credentials by default, since sessions
+  are cookies on the API origin. Pass `fetch` (a service binding, a test double, `expo/fetch`)
+  or `headers` when you need them. The mobile app passes `credentials: "omit"` and sends the
+  session cookie it keeps in secure storage as a header (see
+  [`apps/mobile/src/lib/api.ts`](../../apps/mobile/src/lib/api.ts)).
 - `unwrap` returns the typed success body, or throws an `ApiError` with the HTTP `status` and
   the API's `{ error }` message.
 

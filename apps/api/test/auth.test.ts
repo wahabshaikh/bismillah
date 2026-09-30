@@ -31,6 +31,19 @@ describe("auth", () => {
     expect((await request("/v1/me", { headers: { cookie } })).status).toBe(401);
   });
 
+  it("accepts the mobile app's scheme as its origin", async () => {
+    const { cookie } = await signUp();
+    const signOut = (expoOrigin: string) =>
+      request("/api/auth/sign-out", {
+        method: "POST",
+        headers: { cookie, "expo-origin": expoOrigin },
+      });
+
+    expect((await signOut("evil://")).status).toBe(403);
+    expect((await signOut("bismillah://")).status).toBe(200);
+    expect((await request("/v1/me", { headers: { cookie } })).status).toBe(401);
+  });
+
   it("signs in with email and password", async () => {
     const { email } = await signUp();
     const response = await request("/api/auth/sign-in/email", {

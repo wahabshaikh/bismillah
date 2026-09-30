@@ -2,6 +2,7 @@ import { invariant } from "@bismillah/core";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createDb, schema } from "./db/index.ts";
+import { expoOrigin } from "./lib/expo-origin.ts";
 import { kvSecondaryStorage } from "./lib/kv-storage.ts";
 
 export function parseOrigins(value: string): string[] {
@@ -33,6 +34,7 @@ function createAuth(env: Env) {
     advanced: {
       ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
     },
+    plugins: [expoOrigin()],
     telemetry: { enabled: false },
   });
 }
