@@ -32,6 +32,7 @@ you rely on the numbers.
 | Durable Objects duration | 400K GB-s | $12.50 / million GB-s | Only while handling a request; idle sockets hibernate |
 | Cron Triggers | Free | – | The hourly cleanup |
 | Rate limiting binding | Free | – | Sign-in and sign-up throttling |
+| Email Sending | 3,000 emails | $0.35 / 1,000 | Verification, password reset and password-changed emails |
 | Custom domains, TLS | Free | – | `api.` and `app.` |
 
 R2 is billed on the same account but has its own [free tier](https://developers.cloudflare.com/r2/pricing/),
@@ -41,6 +42,8 @@ which is what the R2 rows show.
 
 | Action | Workers | KV | D1 | R2 | Queues | Durable Objects |
 | ------ | ------- | -- | -- | -- | ------ | --------------- |
+| Sign up | 1 request + a share of a queue batch, password hashing | 1–2 writes | a few rows | – | 3 operations (+ 1 email) | – |
+| Password reset | 2 requests + a share of 2 queue batches | 1–2 writes | a few rows | – | 6 operations (+ 2 emails) | – |
 | Web page load | 1 request (assets free) | – | – | – | – | – |
 | Authenticated API call | 1 request | 1 read | a few indexed rows | – | – | – |
 | Sign in | 1 request, most CPU of any call (password hashing) | 1–2 writes | a few rows | – | – | – |
@@ -53,7 +56,8 @@ Every Worker invocation writes one log event, plus one per `console.log`.
 ## Worked example: 3,000 daily active users
 
 Assumptions, per user per day: 5 page loads, 30 API calls, 3 app opens (each opening a
-WebSocket), 2 file uploads averaging 100 KB, 1 download. Sessions last 7 days and refresh daily.
+WebSocket), 2 file uploads averaging 100 KB, 1 download. Sessions last 7 days and refresh daily. Each day
+40 people sign up and 10 reset their password.
 CPU time is an estimate: 5 ms per API call, 15 ms per page render, 100 ms per sign-in. Months are
 30 days.
 
@@ -69,17 +73,19 @@ CPU time is an estimate: 5 ms per API call, 15 ms per page render, 100 ms per si
 | R2 Class A | **180K** | 1M | 18% |
 | R2 Class B | 180K checksums + 90K downloads ≈ **270K** | 10M | 3% |
 | R2 storage | grows by **18 GB** a month | 10 GB | see below |
-| Queues | 180K messages × 3 ≈ **540K** operations | 1M | 54% |
+| Queues | (180K uploads + 1.8K emails) × 3 ≈ **545K** operations | 1M | 55% |
 | Durable Objects requests | 270K connects + 360K events ≈ **630K** | 1M | 63% |
 | Durable Objects duration | a few thousand GB-s | 400K GB-s | ~1% |
+| Email Sending | 1,200 verifications + 600 reset and password-changed ≈ **1,800** emails | 3,000 | 60% |
 
 Everything but R2 storage fits in the $5. R2 storage is the one number that only goes up: at
 18 GB a month, the second month costs about $0.25 extra and the sixth about $1.35. Delete files
 you don't need, or cap `MAX_UPLOAD_BYTES` in `apps/api/wrangler.jsonc`.
 
-**What runs out first**: CPU time, then Durable Object requests, then Queue operations. Doubling
-this example to 6,000 daily users goes over on those three, and costs well under $1 on top of
-the $5 (about $0.30 of it CPU time).
+**What runs out first**: CPU time, then Durable Object requests, then Email Sending, then Queue
+operations. Doubling this example to 6,000 daily users goes over on those four, and costs about
+$1 on top of the $5 (about $0.30 of it CPU time, $0.21 of it email). Email scales with sign-ups,
+not with daily users, so a launch day is what to watch.
 
 ## Why it stays cheap
 
@@ -94,6 +100,9 @@ These choices in the code keep the numbers above low. Keep them in mind when you
 - **Uploads stream to R2** and are never buffered or re-read by the API route. R2 egress is free.
 - **One queue message per upload, in batches of 10** (`apps/api/wrangler.jsonc`). A batch is
   one Worker invocation, not ten.
+- **Emails go through the queue** (`apps/api/src/email/`), in the same batches as other jobs,
+  and only the three auth emails are sent. Sends to addresses you've verified in Email
+  Routing are free and don't count toward the 3,000.
 - **Retries are bounded**: a message is retried 3 times, and the hourly sweep re-enqueues at most
   100 stuck uploads, so a bug can't loop through your Queues allowance.
 - **WebSockets hibernate** (`apps/api/src/realtime/`). An idle connection costs no Durable Object

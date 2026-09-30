@@ -54,6 +54,20 @@ export function trustedOrigins(webUrl: string, mobileScheme?: string): string {
   return [webUrl, ...(mobileScheme ? [`${mobileScheme}://`] : [])].join(",");
 }
 
+/**
+ * The address transactional email comes from: `EMAIL_FROM` from the environment, else
+ * `noreply@<domain>`. Empty on workers.dev, which makes the API log emails instead.
+ */
+export function emailSender(domain: string | null, override?: string): string {
+  if (override?.trim()) return override.trim();
+  return domain ? `noreply@${domain}` : "";
+}
+
+/** Reads `wrangler email sending settings <domain>` output: is sending on for the domain? */
+export function sendingEnabled(output: string): boolean {
+  return /^\s*Enabled:\s+true\s*$/m.test(output);
+}
+
 /** Finds `https://<worker>.<subdomain>.workers.dev` in `wrangler deploy` output. */
 export function parseWorkersDevSubdomain(output: string, workerName: string): string | undefined {
   const escaped = workerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

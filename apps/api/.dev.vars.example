@@ -1,2 +1,5 @@
 # Copy to .dev.vars for `wrangler dev`. Generate a secret with: openssl rand -base64 32
 BETTER_AUTH_SECRET="replace-me-with-at-least-32-random-characters"
+# Leave unset to print emails in the terminal. To really send, use an address on a domain
+# onboarded to Cloudflare Email Service, and set "remote": true on the send_email binding.
+# EMAIL_FROM="noreply@example.com"

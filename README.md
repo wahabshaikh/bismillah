@@ -4,7 +4,7 @@ An open-source, multi-platform starter kit built entirely on Cloudflare, sized t
 run on the [$5/mo Workers Paid plan](https://developers.cloudflare.com/workers/platform/pricing/).
 
 API, web app and mobile app on one typed API, with auth, a database, file uploads, background
-jobs and realtime events, all on Cloudflare.
+jobs, realtime events and transactional email, all on Cloudflare.
 
 ## Quickstart
 
@@ -44,6 +44,7 @@ on the $5 plan (a worked example of 3,000 daily users fits).
 | Files           | [R2](https://developers.cloudflare.com/r2/)                              |
 | Background jobs | [Queues](https://developers.cloudflare.com/queues/) + [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/) |
 | Realtime        | [Durable Objects](https://developers.cloudflare.com/durable-objects/) with hibernatable WebSockets |
+| Email           | [Cloudflare Email Service](https://developers.cloudflare.com/email-service/): verification, password reset and password-changed emails, sent from the queue |
 | CI              | GitHub Actions: lint, typecheck, test, build, deploy dry run             |
 | Deploy          | `pnpm run deploy`: one command, idempotent, CI-friendly                  |
 
@@ -52,7 +53,7 @@ on the $5 plan (a worked example of 3,000 daily users fits).
 ```
 apps/
   api/                API Worker: Hono, D1 + Drizzle, Better Auth, KV, R2, Queues, Cron,
-                      Durable Objects (see apps/api/README.md)
+                      Durable Objects, Email Service (see apps/api/README.md)
   web/                Web Worker: TanStack Start + static assets (see apps/web/README.md)
   mobile/             Expo app for iOS and Android (see apps/mobile/README.md)
 packages/
@@ -84,7 +85,8 @@ pnpm dev          # API on http://localhost:8787, web app on http://localhost:30
 Open http://localhost:3000, create an account and upload a file. It shows as processing until
 a queued job checksums it, and the change is pushed to every open tab over a WebSocket. The whole
 stack (D1, KV, R2, Queues, Durable Objects, rate limiting) runs locally in `workerd`, with no
-Cloudflare account needed until you deploy.
+Cloudflare account needed until you deploy. Emails aren't sent locally: the API prints them,
+links included, in its terminal.
 
 For the mobile app, run the API on your network and start Metro in another terminal, then open
 the app in Expo Go or a simulator (details in [apps/mobile/README.md](apps/mobile/README.md)):

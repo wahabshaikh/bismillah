@@ -23,7 +23,11 @@
     // mobile app's URL scheme and, for local development only, Expo Go (`exp://`).
     "TRUSTED_ORIGINS": "http://localhost:3000,bismillah://,exp://",
     // Largest upload accepted by POST /v1/uploads, in bytes (10 MiB).
-    "MAX_UPLOAD_BYTES": "10485760"
+    "MAX_UPLOAD_BYTES": "10485760",
+    // Sender for transactional email, on a domain onboarded to Cloudflare Email Service
+    // (e.g. "noreply@example.com"). Empty means emails are logged instead of sent, which is
+    // what you want locally. `pnpm run deploy --domain` sets it to noreply@<domain>.
+    "EMAIL_FROM": ""
   },
   // Set with `wrangler secret put`; locally, copy .dev.vars.example to .dev.vars.
   "secrets": {
@@ -87,6 +91,14 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["UserEvents"]
+    }
+  ],
+  // Cloudflare Email Service (src/email/). Emails are sent from the queue consumer, so a
+  // slow or failed send never holds up a request and is retried like any other job.
+  // 3,000 emails a month are included in the Workers Paid plan.
+  "send_email": [
+    {
+      "name": "EMAIL"
     }
   ],
   // Workers Rate Limiting is free on every plan and keeps brute-force traffic off D1.

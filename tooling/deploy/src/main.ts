@@ -2,9 +2,10 @@
 //
 // 1. Signs in to Cloudflare (or uses CLOUDFLARE_API_TOKEN).
 // 2. Creates the D1 database if it is missing and applies migrations, before any code ships.
-// 3. Uploads required secrets the API does not have yet (prompting, or from the environment).
-// 4. Deploys the API. Wrangler creates the KV namespace, R2 bucket and queue on first deploy.
-// 5. Builds the web app against the API's URL and deploys it.
+// 3. Turns on Cloudflare Email Service sending for your domain, for transactional email.
+// 4. Uploads required secrets the API does not have yet (prompting, or from the environment).
+// 5. Deploys the API. Wrangler creates the KV namespace, R2 bucket and queue on first deploy.
+// 6. Builds the web app against the API's URL and deploys it.
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -14,11 +15,13 @@ import { Writable } from "node:stream";
 import { parse } from "jsonc-parser";
 import {
   domainTarget,
+  emailSender,
   missingSecrets,
   normalizeDomain,
   type Options,
   parseArgs,
   parseWorkersDevSubdomain,
+  sendingEnabled,
   type Target,
   trustedOrigins,
   workersDevTarget,
@@ -207,10 +210,36 @@ async function collectSecrets(api: WorkerConfig): Promise<Record<string, string>
   return values;
 }
 
+/**
+ * Onboards the domain to Cloudflare Email Sending and returns whether the API can send from
+ * it. If it can't, the API is deployed with an empty EMAIL_FROM and logs emails instead.
+ */
+async function ensureEmailSending(domain: string): Promise<boolean> {
+  step(`Turning on Email Sending for ${domain}`);
+  const settings = await wrangler(apiDir, ["email", "sending", "settings", domain], {
+    quiet: true,
+    allowFailure: true,
+  });
+  if (settings.code === 0 && sendingEnabled(settings.stdout)) {
+    console.log("Already on.");
+    return true;
+  }
+  const enable = await wrangler(apiDir, ["email", "sending", "enable", domain], {
+    allowFailure: true,
+  });
+  if (enable.code === 0) return true;
+  console.log(
+    "Couldn't turn on Email Sending, so the API will log emails instead of sending them.\n" +
+      "Onboard the domain under Email Service → Email Sending in the dashboard, then deploy again.",
+  );
+  return false;
+}
+
 async function deployApi(
   api: WorkerConfig,
   target: Target,
   mobileScheme: string | undefined,
+  emailFrom: string,
   extra: string[],
 ) {
   const args = [
@@ -219,6 +248,8 @@ async function deployApi(
     `BETTER_AUTH_URL:${target.apiUrl}`,
     "--var",
     `TRUSTED_ORIGINS:${trustedOrigins(target.webUrl, mobileScheme)}`,
+    "--var",
+    `EMAIL_FROM:${emailFrom}`,
     ...(target.apiHost ? ["--domain", target.apiHost] : []),
     ...extra,
   ];
@@ -252,6 +283,9 @@ async function main() {
     await wrangler(apiDir, ["d1", "migrations", "apply", "DB", "--remote"]);
   }
 
+  const canSend = domain && !options.dryRun ? await ensureEmailSending(domain) : Boolean(domain);
+  const emailFrom = canSend ? emailSender(domain, process.env["EMAIL_FROM"]) : "";
+
   const secrets = options.dryRun ? {} : await collectSecrets(api);
   const secretsDir = mkdtempSync(join(tmpdir(), "bismillah-deploy-"));
   try {
@@ -261,7 +295,7 @@ async function main() {
       writeFileSync(file, JSON.stringify(secrets), { mode: 0o600 });
       extra.push("--secrets-file", file);
     }
-    const result = await deployApi(api, targetFor(subdomain), mobileScheme, extra);
+    const result = await deployApi(api, targetFor(subdomain), mobileScheme, emailFrom, extra);
 
     // On workers.dev the URL is only known after the first deploy. Learn it, then redeploy
     // once so BETTER_AUTH_URL and TRUSTED_ORIGINS point at the right place.
@@ -274,7 +308,7 @@ async function main() {
       }
       if (learned !== subdomain) {
         subdomain = learned;
-        await deployApi(api, targetFor(subdomain), mobileScheme, []);
+        await deployApi(api, targetFor(subdomain), mobileScheme, emailFrom, []);
       }
     }
   } finally {
@@ -299,6 +333,9 @@ async function main() {
   step(options.dryRun ? "Dry run finished: nothing was uploaded" : "Deployed");
   console.log(`  API      ${target.apiUrl}`);
   console.log(`  Web app  ${target.webUrl}`);
+  console.log(
+    `  Email    ${emailFrom ? `sent from ${emailFrom}` : "logged, not sent (no sending domain)"}`,
+  );
   console.log(
     `  Mobile   build with EXPO_PUBLIC_API_URL=${target.apiUrl} (see apps/mobile/README.md)`,
   );
