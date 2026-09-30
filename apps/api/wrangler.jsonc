@@ -1,5 +1,9 @@
 // Shared keys (compatibility date/flags, observability, source maps) come from
 // tooling/wrangler/base.jsonc and are enforced by `pnpm check:wrangler`.
+//
+// Bindings have no resource IDs on purpose: `wrangler dev` and the tests use local
+// simulators, and `wrangler deploy` provisions the D1 database, KV namespace and
+// R2 bucket on first deploy and writes their IDs back into this file.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "bismillah-api",
@@ -12,6 +16,43 @@
   },
   "upload_source_maps": true,
   "vars": {
-    "APP_NAME": "bismillah"
-  }
+    "APP_NAME": "bismillah",
+    // Public URL of this Worker; Better Auth uses it for callbacks and cookies.
+    "BETTER_AUTH_URL": "http://localhost:8787",
+    // Comma-separated origins allowed to call the API with credentials (the web app).
+    "TRUSTED_ORIGINS": "http://localhost:3000",
+    // Largest upload accepted by POST /v1/uploads, in bytes (10 MiB).
+    "MAX_UPLOAD_BYTES": "10485760"
+  },
+  // Set with `wrangler secret put`; locally, copy .dev.vars.example to .dev.vars.
+  "secrets": {
+    "required": ["BETTER_AUTH_SECRET"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bismillah",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Better Auth sessions (secondary storage) and the read-through cache.
+  "kv_namespaces": [
+    {
+      "binding": "KV"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "bismillah-uploads"
+    }
+  ],
+  // Workers Rate Limiting is free on every plan and keeps brute-force traffic off D1.
+  "ratelimits": [
+    {
+      "name": "AUTH_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ]
 }
