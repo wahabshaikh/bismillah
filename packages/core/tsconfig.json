@@ -1,0 +1,4 @@
+{
+  "extends": "@bismillah/tsconfig/library.json",
+  "include": ["src"]
+}

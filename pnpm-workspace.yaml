@@ -1,0 +1,19 @@
+packages:
+  - apps/*
+  - packages/*
+  - tooling/*
+
+# One version of each shared dependency across the monorepo.
+# Reference with "catalog:" in package.json.
+catalog:
+  "@biomejs/biome": 2.5.14
+  "@cloudflare/vitest-pool-workers": 0.22.0
+  "@types/node": ^24.0.0
+  turbo: 2.11.5
+  typescript: 7.0.2
+  vitest: 4.1.11
+  wrangler: 4.144.0
+
+onlyBuiltDependencies:
+  - esbuild
+  - workerd

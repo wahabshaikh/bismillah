@@ -1,0 +1,28 @@
+{
+  "name": "bismillah",
+  "private": true,
+  "description": "Open-source, multi-platform starter kit built entirely on Cloudflare, sized for the $5/mo Workers paid plan.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "biome ci . && pnpm check:wrangler",
+    "format": "biome check --write .",
+    "check:wrangler": "pnpm --filter @bismillah/wrangler check",
+    "typegen": "turbo run typegen",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "fix:wrangler": "pnpm --filter @bismillah/wrangler fix"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:"
+  }
+}

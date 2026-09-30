@@ -1,0 +1,22 @@
+{
+  "name": "@bismillah/wrangler",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared Wrangler defaults and a checker that keeps every Worker in sync with them.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "check": "node src/check.ts",
+    "fix": "node src/check.ts --fix",
+    "typecheck": "tsc",
+    "test": "node --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "jsonc-parser": "3.3.1"
+  },
+  "devDependencies": {
+    "@bismillah/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}
