@@ -1,6 +1,6 @@
 import type { UserEvent } from "@bismillah/api/app";
 
-export type { UploadJson, UserEvent } from "@bismillah/api/app";
+export type { SubscriptionJson, UploadJson, UserEvent } from "@bismillah/api/app";
 
 export type EventStreamStatus = "connecting" | "open" | "closed";
 

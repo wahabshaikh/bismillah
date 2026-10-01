@@ -30,7 +30,7 @@ You don't need to create anything in the dashboard first.
 | 3. Database | Creates the D1 database named in `apps/api/wrangler.jsonc` if it doesn't exist. | No-op |
 | 4. Migrations | `wrangler d1 migrations apply DB --remote`, before any new code ships. Wrangler shows the pending migrations and asks you to confirm. | Applies only new ones |
 | 5. Email | With a domain, turns on [Email Sending](https://developers.cloudflare.com/email-service/) for it (`wrangler email sending enable`) so the API can send from `noreply@<domain>`. If that fails, or on workers.dev, the API logs emails instead of sending them. | Skipped once on |
-| 6. Secrets | Checks every name under `secrets.required` in `apps/api/wrangler.jsonc`. For each missing one, it uses the environment variable of the same name, or asks you to paste a value (Enter generates a random one, which is right for `BETTER_AUTH_SECRET`). | Skipped once set |
+| 6. Secrets | Checks every name under `secrets.required` in `apps/api/wrangler.jsonc`. For each missing one, it uses the environment variable of the same name, or asks you to paste a value (Enter generates a random one, which is right for `BETTER_AUTH_SECRET`). `WHOP_API_KEY` and `WHOP_WEBHOOK_SECRET` are uploaded whenever they're in the environment. | Skipped once set |
 | 7. API | `wrangler deploy` with `BETTER_AUTH_URL`, `TRUSTED_ORIGINS` and `EMAIL_FROM` set for production and the `api.` custom domain attached. On the first deploy Wrangler creates the KV namespace, R2 bucket and queue, registers the Durable Object class and the hourly Cron Trigger. | Updates in place |
 | 8. Web app | Builds with `VITE_API_URL` pointing at the API, then deploys with the `app.` custom domain. | Updates in place |
 
@@ -65,6 +65,7 @@ The script never prompts when it isn't attached to a terminal. Give it everythin
 | `DEPLOY_DOMAIN` | Unless you want `*.workers.dev` |
 | `BETTER_AUTH_SECRET` | First deploy only (or whenever a required secret is missing) |
 | `EMAIL_FROM` | Optional: the sender address, if not `noreply@<DEPLOY_DOMAIN>` |
+| `WHOP_PLAN_ID`, `WHOP_API_KEY`, `WHOP_WEBHOOK_SECRET` | Optional: turn on payments ([payments.md](payments.md)) |
 
 ```yaml
 # .github/workflows/deploy.yml (example)

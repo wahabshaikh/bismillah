@@ -15,6 +15,13 @@
       "when": 1790740117063,
       "tag": "0001_upload_processing",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790798740793,
+      "tag": "0002_billing",
+      "breakpoints": true
     }
   ]
 }

@@ -21,3 +21,8 @@ export const uploadsQuery = queryOptions({
   queryKey: ["uploads"],
   queryFn: () => unwrap(api.uploads.$get({ query: {} })),
 });
+
+export const billingQuery = queryOptions({
+  queryKey: ["billing"],
+  queryFn: () => unwrap(api.billing.$get()),
+});

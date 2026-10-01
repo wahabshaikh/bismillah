@@ -43,6 +43,9 @@ curl -b jar -X POST 'localhost:8787/v1/uploads?filename=notes.txt' \
 | `GET /v1/uploads/:id/content`  | yes  | Downloads the file (always as an attachment)                 |
 | `DELETE /v1/uploads/:id`       | yes  | Deletes the file and its metadata                            |
 | `GET /v1/events`               | yes  | WebSocket upgrade: streams your realtime events as JSON      |
+| `GET /v1/billing`              | yes  | Your plan: `{ enabled, active, subscription }`               |
+| `POST /v1/billing/checkout`    | yes  | A Whop checkout URL for `WHOP_PLAN_ID` (`{ returnUrl? }`)    |
+| `POST /webhooks/whop`          | signed | Whop membership webhooks, verified with `WHOP_WEBHOOK_SECRET` |
 
 Sessions are cookies, so browser clients call the API with `credentials: "include"` from an
 origin listed in `TRUSTED_ORIGINS`. The mobile app uses Better Auth's
@@ -62,12 +65,15 @@ src/
   app.ts                Hono app: middleware, CORS, error handling, route mounting
   auth.ts               Better Auth config (D1 via Drizzle, sessions in KV)
   lib/expo-origin.ts    Lets the mobile app's URL scheme pass Better Auth's origin check
-  db/schema.ts          Drizzle schema: Better Auth tables + upload metadata
+  db/schema.ts          Drizzle schema: Better Auth tables, upload metadata, subscriptions
   lib/kv-storage.ts     Better Auth secondary storage on KV
   lib/cache.ts          `cached()` read-through KV cache helper
   middleware/           Session loading, requireAuth, per-IP rate limiting
   routes/uploads.ts     R2 uploads
   routes/events.ts      WebSocket endpoint for realtime events
+  routes/billing.ts     Plan status and Whop checkout
+  routes/webhooks.ts    Whop webhook: keeps the `subscription` table in sync
+  billing/              Whop API calls and signature checks, `requireSubscription`
   jobs/index.ts         Job types, `enqueue()` and the queue consumer
   jobs/process-upload.ts  Post-upload job: checksums the file, marks it ready
   jobs/scheduled.ts     Hourly cron: cleans up expired rows, retries lost jobs
@@ -140,6 +146,13 @@ Sending needs the domain's SPF, DKIM and DMARC records, which you can check unde
 
 **Adding an email:** add a function to `src/email/templates.ts` and call
 `enqueue(env, { type: "email.send", email: yourEmail(...) })`.
+
+## Payments
+
+Optional, with [Whop](https://whop.com): set `WHOP_PLAN_ID`, `WHOP_API_KEY` and
+`WHOP_WEBHOOK_SECRET` and users can buy a plan from the web and mobile apps. Put
+`requireSubscription` from `src/billing/subscription.ts` after `requireAuth` to make a route
+paid-only. Setup and details: [docs/payments.md](../../docs/payments.md).
 
 ## Database changes
 

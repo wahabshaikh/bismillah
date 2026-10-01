@@ -1,15 +1,19 @@
-import { type ApiError, unwrap } from "@bismillah/api-client";
+import { type ApiError, type SubscriptionJson, unwrap } from "@bismillah/api-client";
 import { Alert, Button, buttonClassName, Card, CardDescription, CardTitle } from "@bismillah/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { type ChangeEvent, useRef } from "react";
 import { api } from "../../lib/api.ts";
 import { type Activity, useLiveUploads } from "../../lib/live.ts";
-import { uploadsQuery } from "../../lib/queries.ts";
+import { billingQuery, uploadsQuery } from "../../lib/queries.ts";
 
 export const Route = createFileRoute("/_authed/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard · bismillah" }] }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(uploadsQuery),
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(uploadsQuery),
+      context.queryClient.ensureQueryData(billingQuery),
+    ]),
   component: Dashboard,
 });
 
@@ -22,9 +26,66 @@ function Dashboard() {
         <h1 className="text-2xl font-semibold tracking-tight">Hi, {user.name}</h1>
         <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
       </div>
+      <Plan />
       <Uploads />
     </div>
   );
+}
+
+function Plan() {
+  const { data } = useQuery(billingQuery);
+
+  const checkout = useMutation<void, ApiError>({
+    mutationFn: async () => {
+      const returnUrl = new URL("/dashboard", window.location.origin).toString();
+      const { url } = await unwrap(api.billing.checkout.$post({ json: { returnUrl } }));
+      window.location.assign(url);
+    },
+  });
+
+  if (!data?.enabled && !data?.subscription) return null;
+  const subscription = data.subscription;
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <CardTitle>{data.active ? "Pro plan" : "Free plan"}</CardTitle>
+          <CardDescription>{describePlan(subscription)}</CardDescription>
+        </div>
+        {data.active ? (
+          subscription?.manageUrl && (
+            <a
+              href={subscription.manageUrl}
+              className={buttonClassName({ variant: "secondary" })}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Manage billing
+            </a>
+          )
+        ) : (
+          <Button onClick={() => checkout.mutate()} disabled={checkout.isPending}>
+            {checkout.isPending ? "Opening checkout…" : "Upgrade"}
+          </Button>
+        )}
+      </div>
+      {checkout.error && <Alert>{checkout.error.message}</Alert>}
+    </Card>
+  );
+}
+
+function describePlan(subscription: SubscriptionJson | null | undefined): string {
+  if (!subscription) return "Payments by Whop. Your plan updates here as soon as you pay.";
+  const end = subscription.currentPeriodEnd
+    ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
+    : null;
+  if (!subscription.active) return `Your subscription is ${subscription.status.replace("_", " ")}.`;
+  if (subscription.status === "past_due") return "Your last payment failed. Update your card.";
+  if (subscription.cancelAtPeriodEnd || subscription.status === "canceling") {
+    return end ? `Cancels on ${end}.` : "Cancels at the end of this period.";
+  }
+  return end ? `Renews on ${end}.` : "Thanks for your support.";
 }
 
 function Uploads() {
@@ -177,6 +238,8 @@ function describe({ event }: Activity): string {
       return `Processed ${event.upload.filename}`;
     case "upload.deleted":
       return "Deleted a file";
+    case "billing.updated":
+      return `Plan ${event.subscription.active ? "activated" : event.subscription.status}`;
   }
 }
 

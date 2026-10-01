@@ -78,6 +78,7 @@ export {
   type EventStreamOptions,
   type EventStreamStatus,
   eventsUrl,
+  type SubscriptionJson,
   subscribeToEvents,
   type UploadJson,
   type UserEvent,
