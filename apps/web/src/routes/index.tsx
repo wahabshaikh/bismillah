@@ -1,4 +1,4 @@
-import { Card, CardDescription, CardTitle } from "@bismillah/ui";
+import { Card, CardDescription, CardHeader, CardTitle } from "@bismillah/ui/components/card";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { API_URL } from "../lib/api.ts";
@@ -35,9 +35,11 @@ function Home() {
       <ul className="grid gap-3 sm:grid-cols-2">
         {stack.map(([title, description]) => (
           <li key={title}>
-            <Card className="h-full p-4">
-              <CardTitle className="text-base">{title}</CardTitle>
-              <CardDescription>{description}</CardDescription>
+            <Card size="sm" className="h-full">
+              <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+              </CardHeader>
             </Card>
           </li>
         ))}
@@ -53,7 +55,7 @@ function ApiStatus() {
   const status = isPending
     ? { dot: "bg-muted-foreground", text: "Checking the API…" }
     : error || !data?.ok
-      ? { dot: "bg-danger", text: `API unreachable at ${API_URL}. Is \`pnpm dev\` running?` }
+      ? { dot: "bg-destructive", text: `API unreachable at ${API_URL}. Is \`pnpm dev\` running?` }
       : { dot: "bg-green-500", text: `API is up at ${API_URL}` };
 
   return (

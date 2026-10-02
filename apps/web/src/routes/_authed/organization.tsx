@@ -1,13 +1,15 @@
+import { Alert, AlertDescription } from "@bismillah/ui/components/alert";
+import { Button } from "@bismillah/ui/components/button";
 import {
-  Alert,
-  Button,
   Card,
+  CardContent,
   CardDescription,
+  CardHeader,
   CardTitle,
-  Input,
-  Label,
-  Select,
-} from "@bismillah/ui";
+} from "@bismillah/ui/components/card";
+import { Input } from "@bismillah/ui/components/input";
+import { Label } from "@bismillah/ui/components/label";
+import { NativeSelect, NativeSelectOption } from "@bismillah/ui/components/native-select";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
@@ -109,13 +111,21 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <Card className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
+    <Card>
+      <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
-      </div>
-      {children}
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">{children}</CardContent>
     </Card>
+  );
+}
+
+function ErrorAlert({ children }: { children: ReactNode }) {
+  return (
+    <Alert variant="destructive">
+      <AlertDescription>{children}</AlertDescription>
+    </Alert>
   );
 }
 
@@ -131,7 +141,7 @@ function Members({
 
   return (
     <Section title="Members" description="Owners and admins can invite, remove and change roles.">
-      {error && <Alert>{error}</Alert>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
       <ul className="divide-y divide-border">
         {organization.members.map((member) => {
           const isMe = member.userId === session?.user.id;
@@ -146,9 +156,8 @@ function Members({
               </div>
               {canManage && !isMe ? (
                 <div className="flex shrink-0 gap-2">
-                  <Select
+                  <NativeSelect
                     aria-label={`Role of ${member.user.name}`}
-                    className="h-8"
                     value={member.role}
                     disabled={pending === member.id}
                     onChange={(event) =>
@@ -162,10 +171,10 @@ function Members({
                       )
                     }
                   >
-                    <option value="member">Member</option>
-                    <option value="admin">Admin</option>
-                    <option value="owner">Owner</option>
-                  </Select>
+                    <NativeSelectOption value="member">Member</NativeSelectOption>
+                    <NativeSelectOption value="admin">Admin</NativeSelectOption>
+                    <NativeSelectOption value="owner">Owner</NativeSelectOption>
+                  </NativeSelect>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -227,29 +236,29 @@ function Invite({ organization }: { organization: FullOrganization }) {
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${id}-role`}>Role</Label>
-          <Select id={`${id}-role`} name="role" defaultValue="member">
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-          </Select>
+          <NativeSelect id={`${id}-role`} name="role" defaultValue="member">
+            <NativeSelectOption value="member">Member</NativeSelectOption>
+            <NativeSelectOption value="admin">Admin</NativeSelectOption>
+          </NativeSelect>
         </div>
         {teams.length > 0 && (
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${id}-team`}>Team</Label>
-            <Select id={`${id}-team`} name="teamId" defaultValue="">
-              <option value="">No team</option>
+            <NativeSelect id={`${id}-team`} name="teamId" defaultValue="">
+              <NativeSelectOption value="">No team</NativeSelectOption>
               {teams.map((team) => (
-                <option key={team.id} value={team.id}>
+                <NativeSelectOption key={team.id} value={team.id}>
                   {team.name}
-                </option>
+                </NativeSelectOption>
               ))}
-            </Select>
+            </NativeSelect>
           </div>
         )}
         <Button type="submit" disabled={pending === "invite"}>
           {pending === "invite" ? "Sending…" : "Send invite"}
         </Button>
       </form>
-      {error && <Alert>{error}</Alert>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
       {invitations.length > 0 && (
         <ul className="divide-y divide-border">
           {invitations.map((invitation) => (
@@ -343,12 +352,12 @@ function Teams({
             <Label htmlFor={`${id}-name`}>New team</Label>
             <Input id={`${id}-name`} name="name" required placeholder="Engineering" />
           </div>
-          <Button type="submit" variant="secondary" disabled={pending === "create"}>
+          <Button type="submit" variant="outline" disabled={pending === "create"}>
             Create team
           </Button>
         </form>
       )}
-      {error && <Alert>{error}</Alert>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
     </Section>
   );
 }
@@ -378,11 +387,11 @@ function DangerZone({
           : "You'll need a new invitation to come back."
       }
     >
-      {error && <Alert>{error}</Alert>}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
       <div>
         {isOwner ? (
           <Button
-            variant="danger"
+            variant="destructive"
             disabled={pending === "delete"}
             onClick={() => {
               if (!window.confirm(`Delete ${organization.name} for everyone?`)) return;
@@ -396,7 +405,7 @@ function DangerZone({
           </Button>
         ) : (
           <Button
-            variant="secondary"
+            variant="outline"
             disabled={pending === "leave"}
             onClick={() =>
               run("leave", async () => {
@@ -431,21 +440,23 @@ function CreateOrganization() {
   }
 
   return (
-    <Card id="create" className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
+    <Card id="create">
+      <CardHeader>
         <CardTitle>New organization</CardTitle>
         <CardDescription>You'll be its owner, and it becomes your active one.</CardDescription>
-      </div>
-      <form onSubmit={onSubmit} className="flex items-end gap-3">
-        <div className="flex flex-1 flex-col gap-2">
-          <Label htmlFor={`${id}-name`}>Name</Label>
-          <Input id={`${id}-name`} name="name" required maxLength={64} placeholder="Acme Inc." />
-        </div>
-        <Button type="submit" disabled={pending === "create"}>
-          {pending === "create" ? "Creating…" : "Create"}
-        </Button>
-      </form>
-      {error && <Alert>{error}</Alert>}
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <form onSubmit={onSubmit} className="flex items-end gap-3">
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor={`${id}-name`}>Name</Label>
+            <Input id={`${id}-name`} name="name" required maxLength={64} placeholder="Acme Inc." />
+          </div>
+          <Button type="submit" disabled={pending === "create"}>
+            {pending === "create" ? "Creating…" : "Create"}
+          </Button>
+        </form>
+        {error && <ErrorAlert>{error}</ErrorAlert>}
+      </CardContent>
     </Card>
   );
 }

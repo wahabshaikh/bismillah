@@ -1,4 +1,9 @@
 {
   "extends": "@bismillah/tsconfig/react.json",
+  "compilerOptions": {
+    "paths": {
+      "@bismillah/ui/*": ["./src/*"]
+    }
+  },
   "include": ["src"]
 }

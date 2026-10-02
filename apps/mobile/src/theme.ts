@@ -1,6 +1,6 @@
 import { useColorScheme } from "react-native";
 
-/** The same design tokens as `@bismillah/ui/theme.css`, converted from OKLCH to hex. */
+/** The same design tokens as `@bismillah/ui/globals.css`, converted from OKLCH to hex. */
 const palettes = {
   light: {
     background: "#fcfcfc",
