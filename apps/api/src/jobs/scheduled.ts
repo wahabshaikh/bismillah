@@ -2,7 +2,7 @@ import { and, asc, isNull, lt } from "drizzle-orm";
 import { createDb, schema } from "../db/index.ts";
 import { enqueue } from "./index.ts";
 
-const { session, upload, verification } = schema;
+const { invitation, session, upload, verification } = schema;
 
 /** Uploads still unprocessed after this long are assumed to have lost their job. */
 export const STALE_UPLOAD_MS = 15 * 60 * 1000;
@@ -23,6 +23,15 @@ export async function runScheduled(env: Env, now = new Date()): Promise<void> {
         .delete(verification)
         .where(lt(verification.expiresAt, now))
         .returning({ id: verification.id });
+      return rows.length;
+    },
+    // Better Auth marks invitations accepted, rejected or canceled but never deletes them.
+    // Past their expiry they can't be accepted any more, so drop them.
+    async expiredInvitations() {
+      const rows = await db
+        .delete(invitation)
+        .where(lt(invitation.expiresAt, now))
+        .returning({ id: invitation.id });
       return rows.length;
     },
     // Sessions live in KV, which expires them itself. This only matters if you

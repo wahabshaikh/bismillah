@@ -1,8 +1,10 @@
 import { invariant } from "@bismillah/core";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { organization } from "better-auth/plugins/organization";
+import { asc, eq } from "drizzle-orm";
 import { createDb, schema } from "./db/index.ts";
-import { passwordChanged, resetPassword, verifyEmail } from "./email/templates.ts";
+import { invitation, passwordChanged, resetPassword, verifyEmail } from "./email/templates.ts";
 import { enqueue } from "./jobs/index.ts";
 import { expoOrigin } from "./lib/expo-origin.ts";
 import { kvSecondaryStorage } from "./lib/kv-storage.ts";
@@ -16,13 +18,14 @@ export function parseOrigins(value: string): string[] {
 
 function createAuth(env: Env) {
   invariant(env.BETTER_AUTH_SECRET, "BETTER_AUTH_SECRET is not set (see .dev.vars.example)");
+  const db = createDb(env.DB);
   return betterAuth({
     appName: env.APP_NAME,
     baseURL: env.BETTER_AUTH_URL,
     basePath: "/api/auth",
     secret: env.BETTER_AUTH_SECRET,
     trustedOrigins: parseOrigins(env.TRUSTED_ORIGINS),
-    database: drizzleAdapter(createDb(env.DB), { provider: "sqlite", schema }),
+    database: drizzleAdapter(db, { provider: "sqlite", schema }),
     // Sessions are read on every authenticated request, so they live in KV
     // (10M reads/month included) rather than D1.
     secondaryStorage: kvSecondaryStorage(env.KV),
@@ -52,10 +55,48 @@ function createAuth(env: Env) {
         await enqueue(env, { type: "email.send", email: verifyEmail(env.APP_NAME, user, url) });
       },
     },
+    databaseHooks: {
+      session: {
+        create: {
+          // Sign-in drops you into the first organization you joined, so org-scoped routes
+          // work straight away. One indexed D1 read per sign-in, none per request.
+          before: async (session) => {
+            const [first] = await db
+              .select({ organizationId: schema.member.organizationId })
+              .from(schema.member)
+              .where(eq(schema.member.userId, session.userId))
+              .orderBy(asc(schema.member.createdAt))
+              .limit(1);
+            return { data: { ...session, activeOrganizationId: first?.organizationId ?? null } };
+          },
+        },
+      },
+    },
     advanced: {
       ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
     },
-    plugins: [expoOrigin()],
+    plugins: [
+      expoOrigin(),
+      // Organizations (workspaces) with owner/admin/member roles, email invitations and
+      // teams. Endpoints live under /api/auth/organization/*; see docs/organizations.md.
+      organization({
+        teams: { enabled: true },
+        // Better Auth doesn't build invitation links: this one opens the web app, which
+        // signs you in (or up) first and then accepts the invitation.
+        sendInvitationEmail: async ({ id, email, organization, inviter }) => {
+          const url = new URL(`/accept-invitation/${id}`, env.WEB_URL).toString();
+          await enqueue(env, {
+            type: "email.send",
+            email: invitation(env.APP_NAME, {
+              email,
+              organization: organization.name,
+              inviter: inviter.user.name,
+              url,
+            }),
+          });
+        },
+      }),
+    ],
     telemetry: { enabled: false },
   });
 }

@@ -5,6 +5,7 @@ import { Stack } from "expo-router";
 import * as Sharing from "expo-sharing";
 import { useState } from "react";
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Organization } from "../components/organization.tsx";
 import { Plan } from "../components/plan.tsx";
 import { Button, ErrorMessage, Muted, Title } from "../components/ui.tsx";
 import { api, downloadUpload, type Upload, uploadFile } from "../lib/api.ts";
@@ -100,6 +101,7 @@ export default function Files() {
               <Title>Hi, {session?.user.name}</Title>
               <Muted>Signed in as {session?.user.email}</Muted>
             </View>
+            <Organization />
             <Plan />
             <Button
               onPress={() => upload.mutate()}

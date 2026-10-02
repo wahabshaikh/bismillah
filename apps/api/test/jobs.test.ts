@@ -60,7 +60,7 @@ describe("upload.process job", () => {
 });
 
 describe("scheduled cleanup", () => {
-  it("deletes expired verification tokens and re-enqueues stale uploads", async () => {
+  it("deletes expired tokens and invitations, and re-enqueues stale uploads", async () => {
     const now = Date.now();
     await env.DB.prepare(
       "insert into verification (id, identifier, value, expires_at) values (?, 'e', 'v', ?), (?, 'e', 'v', ?)",
@@ -68,7 +68,15 @@ describe("scheduled cleanup", () => {
       .bind("expired", now - 1000, "live", now + 60_000)
       .run();
 
-    const { cookie } = await signUp();
+    const { cookie, body } = await signUp();
+    await env.DB.batch([
+      env.DB.prepare(
+        "insert into organization (id, name, slug) values ('org-cron', 'Cron', 'cron')",
+      ),
+      env.DB.prepare(
+        "insert into invitation (id, organization_id, email, role, expires_at, inviter_id) values (?, 'org-cron', 'a@example.com', 'member', ?, ?), (?, 'org-cron', 'b@example.com', 'member', ?, ?)",
+      ).bind("inv-expired", now - 1000, body.user.id, "inv-live", now + 60_000, body.user.id),
+    ]);
     const stale = await upload(cookie);
     const fresh = await upload(cookie);
     await env.DB.prepare("update upload set created_at = ? where id = ?")
@@ -84,6 +92,10 @@ describe("scheduled cleanup", () => {
       "select id from verification where id in ('expired', 'live')",
     ).all<{ id: string }>();
     expect(ids.results.map((r) => r.id)).toEqual(["live"]);
+    const invitations = await env.DB.prepare(
+      "select id from invitation where organization_id = 'org-cron'",
+    ).all<{ id: string }>();
+    expect(invitations.results.map((r) => r.id)).toEqual(["inv-live"]);
 
     const sent = sendBatch.mock.calls.flatMap((call) => (call as unknown as [{ body: Job }[]])[0]);
     const uploadIds = sent.map((m) => (m.body as { uploadId: string }).uploadId);

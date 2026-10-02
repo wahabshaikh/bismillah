@@ -45,6 +45,7 @@ curl -b jar -X POST 'localhost:8787/v1/uploads?filename=notes.txt' \
 | `GET /v1/events`               | yes  | WebSocket upgrade: streams your realtime events as JSON      |
 | `GET /v1/billing`              | yes  | Your plan: `{ enabled, active, subscription }`               |
 | `POST /v1/billing/checkout`    | yes  | A Whop checkout URL for `WHOP_PLAN_ID` (`{ returnUrl? }`)    |
+| `GET /v1/organization`         | yes  | The active organization and your roles in it                 |
 | `POST /webhooks/whop`          | signed | Whop membership webhooks, verified with `WHOP_WEBHOOK_SECRET` |
 
 Sessions are cookies, so browser clients call the API with `credentials: "include"` from an
@@ -65,13 +66,14 @@ src/
   app.ts                Hono app: middleware, CORS, error handling, route mounting
   auth.ts               Better Auth config (D1 via Drizzle, sessions in KV)
   lib/expo-origin.ts    Lets the mobile app's URL scheme pass Better Auth's origin check
-  db/schema.ts          Drizzle schema: Better Auth tables, upload metadata, subscriptions
+  db/schema.ts          Drizzle schema: Better Auth and organization tables, uploads, subscriptions
   lib/kv-storage.ts     Better Auth secondary storage on KV
   lib/cache.ts          `cached()` read-through KV cache helper
-  middleware/           Session loading, requireAuth, per-IP rate limiting
+  middleware/           Session loading, requireAuth, requireOrganization, per-IP rate limiting
   routes/uploads.ts     R2 uploads
   routes/events.ts      WebSocket endpoint for realtime events
   routes/billing.ts     Plan status and Whop checkout
+  routes/organization.ts  The active organization (example of an org-scoped route)
   routes/webhooks.ts    Whop webhook: keeps the `subscription` table in sync
   billing/              Whop API calls and signature checks, `requireSubscription`
   jobs/index.ts         Job types, `enqueue()` and the queue consumer
@@ -146,6 +148,13 @@ Sending needs the domain's SPF, DKIM and DMARC records, which you can check unde
 
 **Adding an email:** add a function to `src/email/templates.ts` and call
 `enqueue(env, { type: "email.send", email: yourEmail(...) })`.
+
+## Organizations
+
+Better Auth's organization plugin serves `/api/auth/organization/*`: create organizations,
+invite by email, manage roles and teams. Put `requireOrganization()` from
+`src/middleware/organization.ts` after `requireAuth` to scope a route to the session's active
+organization, optionally to some roles. Details: [docs/organizations.md](../../docs/organizations.md).
 
 ## Payments
 

@@ -41,6 +41,7 @@ on the $5 plan (a worked example of 3,000 daily users fits).
 | API             | [Hono](https://hono.dev), typed end to end with [Hono RPC](https://hono.dev/docs/guides/rpc) |
 | Database        | [D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team) migrations |
 | Auth            | [Better Auth](https://www.better-auth.com), sessions in Workers KV       |
+| Organizations   | Better Auth organizations: roles, email invitations, teams and an org switcher on web and mobile ([docs/organizations.md](docs/organizations.md)) |
 | Files           | [R2](https://developers.cloudflare.com/r2/)                              |
 | Background jobs | [Queues](https://developers.cloudflare.com/queues/) + [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/) |
 | Realtime        | [Durable Objects](https://developers.cloudflare.com/durable-objects/) with hibernatable WebSockets |
@@ -69,6 +70,7 @@ docs/
   deploy.md           Deploying, from CI too
   budget.md           What each service costs against the $5 plan
   payments.md         Selling a plan with Whop
+  organizations.md    Organizations, roles, invitations and teams
 ```
 
 Internal packages export their TypeScript source directly (`"exports": "./src/index.ts"`),

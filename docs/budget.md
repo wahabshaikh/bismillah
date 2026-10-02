@@ -49,9 +49,11 @@ which is what the R2 rows show.
 | Sign in | 1 request, most CPU of any call (password hashing) | 1–2 writes | a few rows | – | – | – |
 | Upload a file | 1 request + a share of a queue batch | 1 read | ~3 rows written | 1 Class A + 1 Class B | 3 operations | 2 requests (created, processed) |
 | Open the realtime socket | 1 request | 1 read | – | – | – | 1 request |
+| Create or switch organization | 1 request | 1 read, 1 write | a few rows | – | – | – |
+| Invite to an organization | 1 request + a share of a queue batch | 1 read | a few rows | – | 3 operations (+ 1 email) | – |
 | Whop checkout | 1 request + 1 outbound fetch | 1 read | – | – | – | – |
 | Whop webhook | 1 request | – | 1–2 rows read, 1 written | – | – | 1 request |
-| Hourly cron | 1 request | – | 3 indexed queries | – | up to 100 retries | – |
+| Hourly cron | 1 request | – | 4 indexed queries | – | up to 100 retries | – |
 
 Every Worker invocation writes one log event, plus one per `console.log`.
 
