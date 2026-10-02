@@ -20,6 +20,16 @@ export type AuthedEnv = AppEnv & {
   };
 };
 
+/** Default roles of Better Auth's organization plugin. */
+export type OrgRole = "owner" | "admin" | "member";
+
+/** Variables after `requireOrganization` (src/middleware/organization.ts) has run. */
+export type OrgEnv = {
+  Variables: {
+    organization: { id: string; roles: OrgRole[] };
+  };
+};
+
 // Optional secrets aren't in wrangler.jsonc's `secrets.required`, so `wrangler types` doesn't
 // know them. Payments stay off until they're set (see docs/payments.md).
 declare global {

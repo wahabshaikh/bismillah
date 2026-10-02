@@ -1,3 +1,4 @@
+import { organizationClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { API_URL } from "./api.ts";
 
@@ -10,6 +11,8 @@ export const authClient = createAuthClient({
   baseURL: API_URL,
   basePath: "/api/auth",
   fetchOptions: { credentials: "include" },
+  plugins: [organizationClient({ teams: { enabled: true } })],
 });
 
-export const { useSession } = authClient;
+export const { useSession, useActiveOrganization, useListOrganizations, useActiveMember } =
+  authClient;

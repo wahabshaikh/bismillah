@@ -4,3 +4,4 @@ export { Card, CardDescription, CardTitle } from "./card.tsx";
 export { cn } from "./cn.ts";
 export { Input } from "./input.tsx";
 export { Label } from "./label.tsx";
+export { Select } from "./select.tsx";

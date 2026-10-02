@@ -1,4 +1,5 @@
 import { expoClient } from "@better-auth/expo/client";
+import { organizationClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import * as SecureStore from "expo-secure-store";
 import { API_URL } from "./config.ts";
@@ -18,6 +19,8 @@ export const authClient = createAuthClient({
       storagePrefix: "bismillah",
       storage: SecureStore,
     }),
+    // Organizations are created and managed on the web; the app switches between them.
+    organizationClient({ teams: { enabled: true } }),
   ],
 });
 

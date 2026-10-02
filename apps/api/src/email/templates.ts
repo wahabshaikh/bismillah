@@ -88,3 +88,20 @@ export function passwordChanged(appName: string, user: Recipient): Email {
     footer: "If this wasn't you, reset your password again right away.",
   });
 }
+
+export function invitation(
+  appName: string,
+  invite: { email: string; organization: string; inviter: string; url: string },
+): Email {
+  return render(invite.email, `${invite.inviter} invited you to ${invite.organization}`, {
+    appName,
+    heading: `Join ${invite.organization}`,
+    body: [
+      `${invite.inviter} invited you to join ${invite.organization} on ${appName}.`,
+      `Sign in or create an account with ${invite.email} to accept.`,
+    ],
+    action: { label: "Accept invitation", url: invite.url },
+    footer:
+      "The invitation expires in 48 hours. If you weren't expecting it, you can ignore this email.",
+  });
+}

@@ -9,6 +9,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { OrganizationSwitcher } from "../components/organization-switcher.tsx";
 import { authClient, useSession } from "../lib/auth.ts";
 import styles from "../styles.css?url";
 
@@ -77,8 +78,12 @@ function Header() {
       <nav className="flex items-center gap-2 text-sm">
         {isPending ? null : session ? (
           <>
+            <OrganizationSwitcher />
             <Link to="/dashboard" className="px-2 hover:underline">
               Dashboard
+            </Link>
+            <Link to="/organization" className="px-2 hover:underline">
+              Organization
             </Link>
             <Button variant="secondary" size="sm" onClick={signOut}>
               Sign out

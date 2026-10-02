@@ -10,6 +10,7 @@ import { loadSession, requireAuth } from "./middleware/auth.ts";
 import { rateLimit } from "./middleware/rate-limit.ts";
 import { billing } from "./routes/billing.ts";
 import { events } from "./routes/events.ts";
+import { organization } from "./routes/organization.ts";
 import { uploads } from "./routes/uploads.ts";
 import { webhooks } from "./routes/webhooks.ts";
 
@@ -53,7 +54,8 @@ const v1 = new Hono<AuthedEnv>()
   .get("/me", (c) => c.json({ user: c.var.user, session: c.var.session }))
   .route("/uploads", uploads)
   .route("/events", events)
-  .route("/billing", billing);
+  .route("/billing", billing)
+  .route("/organization", organization);
 
 // Cast is safe: `requireAuth` guarantees the narrowed variables inside `v1`.
 app.route("/v1", v1 as unknown as Hono<AppEnv>);

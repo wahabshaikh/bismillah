@@ -1,6 +1,6 @@
 # @bismillah/ui
 
-Shared React components (`Button`, `Input`, `Label`, `Card`, `Alert`) and design tokens for the
+Shared React components (`Button`, `Input`, `Label`, `Select`, `Card`, `Alert`) and design tokens for the
 web app, styled with [Tailwind CSS v4](https://tailwindcss.com).
 
 ```css

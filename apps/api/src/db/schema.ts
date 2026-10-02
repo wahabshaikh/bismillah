@@ -35,6 +35,9 @@ export const session = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    // Organization plugin: what the user is currently working in.
+    activeOrganizationId: text("active_organization_id"),
+    activeTeamId: text("active_team_id"),
     ...timestamps,
   },
   (t) => [index("session_user_id_idx").on(t.userId)],
@@ -71,6 +74,97 @@ export const verification = sqliteTable(
     ...timestamps,
   },
   (t) => [index("verification_identifier_idx").on(t.identifier)],
+);
+
+// Better Auth organization plugin (src/auth.ts): organizations, their members and
+// pending invitations, plus optional teams inside an organization.
+
+export const organization = sqliteTable("organization", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  logo: text("logo"),
+  metadata: text("metadata"),
+  createdAt: timestamps.createdAt,
+});
+
+export const member = sqliteTable(
+  "member",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("member"),
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [
+    index("member_organization_id_idx").on(t.organizationId),
+    index("member_user_id_idx").on(t.userId),
+  ],
+);
+
+export const invitation = sqliteTable(
+  "invitation",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    role: text("role"),
+    teamId: text("team_id"),
+    status: text("status").notNull().default("pending"),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    inviterId: text("inviter_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [
+    index("invitation_organization_id_idx").on(t.organizationId),
+    index("invitation_email_idx").on(t.email),
+    // For the hourly cleanup of expired invitations (src/jobs/scheduled.ts).
+    index("invitation_expires_at_idx").on(t.expiresAt),
+  ],
+);
+
+export const team = sqliteTable(
+  "team",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    memberCount: integer("member_count").notNull().default(0),
+    createdAt: timestamps.createdAt,
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).$onUpdate(() => new Date()),
+  },
+  (t) => [index("team_organization_id_idx").on(t.organizationId)],
+);
+
+export const teamMember = sqliteTable(
+  "team_member",
+  {
+    id: text("id").primaryKey(),
+    teamId: text("team_id")
+      .notNull()
+      .references(() => team.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    // Set by Better Auth so a user can't be added to the same team twice.
+    membershipKey: text("membership_key").unique(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }),
+  },
+  (t) => [
+    index("team_member_team_id_idx").on(t.teamId),
+    index("team_member_user_id_idx").on(t.userId),
+  ],
 );
 
 /**
@@ -129,3 +223,5 @@ export const subscription = sqliteTable(
 export type User = typeof user.$inferSelect;
 export type Upload = typeof upload.$inferSelect;
 export type Subscription = typeof subscription.$inferSelect;
+export type Organization = typeof organization.$inferSelect;
+export type Member = typeof member.$inferSelect;

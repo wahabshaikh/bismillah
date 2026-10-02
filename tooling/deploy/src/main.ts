@@ -262,6 +262,8 @@ async function deployApi(
     "--var",
     `TRUSTED_ORIGINS:${trustedOrigins(target.webUrl, mobileScheme)}`,
     "--var",
+    `WEB_URL:${target.webUrl}`,
+    "--var",
     `EMAIL_FROM:${emailFrom}`,
     // Otherwise the value in wrangler.jsonc is deployed.
     ...(process.env["WHOP_PLAN_ID"]
