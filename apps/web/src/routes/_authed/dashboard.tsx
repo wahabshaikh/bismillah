@@ -1,5 +1,14 @@
 import { type ApiError, type SubscriptionJson, unwrap } from "@bismillah/api-client";
-import { Alert, Button, buttonClassName, Card, CardDescription, CardTitle } from "@bismillah/ui";
+import { Alert, AlertDescription } from "@bismillah/ui/components/alert";
+import { Button, buttonVariants } from "@bismillah/ui/components/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@bismillah/ui/components/card";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { type ChangeEvent, useRef } from "react";
@@ -47,30 +56,36 @@ function Plan() {
   const subscription = data.subscription;
 
   return (
-    <Card className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <CardTitle>{data.active ? "Pro plan" : "Free plan"}</CardTitle>
-          <CardDescription>{describePlan(subscription)}</CardDescription>
-        </div>
-        {data.active ? (
-          subscription?.manageUrl && (
-            <a
-              href={subscription.manageUrl}
-              className={buttonClassName({ variant: "secondary" })}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Manage billing
-            </a>
-          )
-        ) : (
-          <Button onClick={() => checkout.mutate()} disabled={checkout.isPending}>
-            {checkout.isPending ? "Opening checkout…" : "Upgrade"}
-          </Button>
-        )}
-      </div>
-      {checkout.error && <Alert>{checkout.error.message}</Alert>}
+    <Card>
+      <CardHeader>
+        <CardTitle>{data.active ? "Pro plan" : "Free plan"}</CardTitle>
+        <CardDescription>{describePlan(subscription)}</CardDescription>
+        <CardAction>
+          {data.active ? (
+            subscription?.manageUrl && (
+              <a
+                href={subscription.manageUrl}
+                className={buttonVariants({ variant: "outline" })}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Manage billing
+              </a>
+            )
+          ) : (
+            <Button onClick={() => checkout.mutate()} disabled={checkout.isPending}>
+              {checkout.isPending ? "Opening checkout…" : "Upgrade"}
+            </Button>
+          )}
+        </CardAction>
+      </CardHeader>
+      {checkout.error && (
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertDescription>{checkout.error.message}</AlertDescription>
+          </Alert>
+        </CardContent>
+      )}
     </Card>
   );
 }
@@ -126,67 +141,73 @@ function Uploads() {
 
   return (
     <>
-      <Card className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <CardTitle>Your files</CardTitle>
-            <CardDescription>
-              Stored in R2, with metadata in D1. A queued job checksums each file.
-            </CardDescription>
-          </div>
-          <input
-            ref={input}
-            type="file"
-            className="sr-only"
-            onChange={onFileChange}
-            tabIndex={-1}
-          />
-          <Button onClick={() => input.current?.click()} disabled={upload.isPending}>
-            {upload.isPending ? "Uploading…" : "Upload"}
-          </Button>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Your files</CardTitle>
+          <CardDescription>
+            Stored in R2, with metadata in D1. A queued job checksums each file.
+          </CardDescription>
+          <CardAction>
+            <input
+              ref={input}
+              type="file"
+              className="sr-only"
+              onChange={onFileChange}
+              tabIndex={-1}
+            />
+            <Button onClick={() => input.current?.click()} disabled={upload.isPending}>
+              {upload.isPending ? "Uploading…" : "Upload"}
+            </Button>
+          </CardAction>
+        </CardHeader>
 
-        {error && <Alert>{error.message}</Alert>}
+        <CardContent className="flex flex-col gap-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error.message}</AlertDescription>
+            </Alert>
+          )}
 
-        {data?.items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No files yet.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {data?.items.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-4 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{item.filename}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatBytes(item.size)} · {new Date(item.createdAt).toLocaleString()} ·{" "}
-                    {item.status === "ready" && item.sha256 ? (
-                      <span title={`SHA-256 ${item.sha256}`}>
-                        SHA-256 {item.sha256.slice(0, 12)}…
-                      </span>
-                    ) : (
-                      <span className="animate-pulse">Processing…</span>
-                    )}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <a
-                    href={api.uploads[":id"].content.$url({ param: { id: item.id } }).toString()}
-                    className={buttonClassName({ variant: "secondary", size: "sm" })}
-                  >
-                    Download
-                  </a>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={remove.isPending && remove.variables === item.id}
-                    onClick={() => remove.mutate(item.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+          {data?.items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No files yet.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {data?.items.map((item) => (
+                <li key={item.id} className="flex items-center justify-between gap-4 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{item.filename}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatBytes(item.size)} · {new Date(item.createdAt).toLocaleString()} ·{" "}
+                      {item.status === "ready" && item.sha256 ? (
+                        <span title={`SHA-256 ${item.sha256}`}>
+                          SHA-256 {item.sha256.slice(0, 12)}…
+                        </span>
+                      ) : (
+                        <span className="animate-pulse">Processing…</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <a
+                      href={api.uploads[":id"].content.$url({ param: { id: item.id } }).toString()}
+                      className={buttonVariants({ variant: "outline", size: "sm" })}
+                    >
+                      Download
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={remove.isPending && remove.variables === item.id}
+                      onClick={() => remove.mutate(item.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
       </Card>
       <LiveActivity {...live} />
     </>
@@ -197,35 +218,37 @@ const STATUS_LABEL = { connecting: "Connecting…", open: "Live", closed: "Recon
 
 function LiveActivity({ status, activity }: ReturnType<typeof useLiveUploads>) {
   return (
-    <Card className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <CardTitle>Live activity</CardTitle>
-          <CardDescription>
-            Pushed over a WebSocket by a Durable Object. Open this page in two tabs to see it.
-          </CardDescription>
-        </div>
-        <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-          <span
-            className={`size-2 rounded-full ${status === "open" ? "bg-green-500" : "bg-amber-500"}`}
-          />
-          {STATUS_LABEL[status]}
-        </span>
-      </div>
-      {activity.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing yet. Upload a file.</p>
-      ) : (
-        <ul className="flex flex-col gap-2 text-sm">
-          {activity.map((item) => (
-            <li key={item.key} className="flex justify-between gap-4">
-              <span className="truncate">{describe(item)}</span>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {item.at.toLocaleTimeString()}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <Card>
+      <CardHeader>
+        <CardTitle>Live activity</CardTitle>
+        <CardDescription>
+          Pushed over a WebSocket by a Durable Object. Open this page in two tabs to see it.
+        </CardDescription>
+        <CardAction>
+          <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+            <span
+              className={`size-2 rounded-full ${status === "open" ? "bg-green-500" : "bg-amber-500"}`}
+            />
+            {STATUS_LABEL[status]}
+          </span>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        {activity.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing yet. Upload a file.</p>
+        ) : (
+          <ul className="flex flex-col gap-2 text-sm">
+            {activity.map((item) => (
+              <li key={item.key} className="flex justify-between gap-4">
+                <span className="truncate">{describe(item)}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {item.at.toLocaleTimeString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
     </Card>
   );
 }

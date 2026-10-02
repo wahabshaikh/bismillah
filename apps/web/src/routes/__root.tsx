@@ -1,4 +1,5 @@
-import { Button, buttonClassName } from "@bismillah/ui";
+import { Button, buttonVariants } from "@bismillah/ui/components/button";
+import appCss from "@bismillah/ui/globals.css?url";
 import type { QueryClient } from "@tanstack/react-query";
 import {
   createRootRouteWithContext,
@@ -11,7 +12,6 @@ import {
 import type { ReactNode } from "react";
 import { OrganizationSwitcher } from "../components/organization-switcher.tsx";
 import { authClient, useSession } from "../lib/auth.ts";
-import styles from "../styles.css?url";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -25,7 +25,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
     ],
     links: [
-      { rel: "stylesheet", href: styles },
+      { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
   }),
@@ -85,7 +85,7 @@ function Header() {
             <Link to="/organization" className="px-2 hover:underline">
               Organization
             </Link>
-            <Button variant="secondary" size="sm" onClick={signOut}>
+            <Button variant="outline" size="sm" onClick={signOut}>
               Sign out
             </Button>
           </>
@@ -94,7 +94,7 @@ function Header() {
             <Link to="/sign-in" className="px-2 hover:underline">
               Sign in
             </Link>
-            <Link to="/sign-up" className={buttonClassName({ size: "sm" })}>
+            <Link to="/sign-up" className={buttonVariants({ size: "sm" })}>
               Sign up
             </Link>
           </>

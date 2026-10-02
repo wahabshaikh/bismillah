@@ -1,4 +1,15 @@
-import { Alert, Button, Card, CardDescription, CardTitle, Input, Label } from "@bismillah/ui";
+import { Alert, AlertDescription } from "@bismillah/ui/components/alert";
+import { Button } from "@bismillah/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@bismillah/ui/components/card";
+import { Input } from "@bismillah/ui/components/input";
+import { Label } from "@bismillah/ui/components/label";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 
 export interface AuthFields {
@@ -57,42 +68,52 @@ export function AuthForm({
 
   return (
     <Card className="mx-auto w-full max-w-sm">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </div>
-        {fields.includes("name") && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}-name`}>Name</Label>
-            <Input id={`${id}-name`} name="name" autoComplete="name" required />
-          </div>
-        )}
-        {fields.includes("email") && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}-email`}>Email</Label>
-            <Input id={`${id}-email`} name="email" type="email" autoComplete="email" required />
-          </div>
-        )}
-        {fields.includes("password") && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${id}-password`}>{newPassword ? "New password" : "Password"}</Label>
-            <Input
-              id={`${id}-password`}
-              name="password"
-              type="password"
-              autoComplete={newPassword ? "new-password" : "current-password"}
-              minLength={8}
-              required
-            />
-          </div>
-        )}
-        {error && <Alert>{error}</Alert>}
-        <Button type="submit" disabled={pending}>
-          {pending ? "Please wait…" : submitLabel}
-        </Button>
-        {footer && <p className="text-center text-sm text-muted-foreground">{footer}</p>}
-      </form>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {fields.includes("name") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${id}-name`}>Name</Label>
+              <Input id={`${id}-name`} name="name" autoComplete="name" required />
+            </div>
+          )}
+          {fields.includes("email") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${id}-email`}>Email</Label>
+              <Input id={`${id}-email`} name="email" type="email" autoComplete="email" required />
+            </div>
+          )}
+          {fields.includes("password") && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor={`${id}-password`}>{newPassword ? "New password" : "Password"}</Label>
+              <Input
+                id={`${id}-password`}
+                name="password"
+                type="password"
+                autoComplete={newPassword ? "new-password" : "current-password"}
+                minLength={8}
+                required
+              />
+            </div>
+          )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <Button type="submit" disabled={pending}>
+            {pending ? "Please wait…" : submitLabel}
+          </Button>
+        </form>
+      </CardContent>
+      {footer && (
+        <CardFooter className="justify-center">
+          <p className="text-center text-muted-foreground">{footer}</p>
+        </CardFooter>
+      )}
     </Card>
   );
 }

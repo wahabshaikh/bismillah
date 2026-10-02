@@ -1,4 +1,4 @@
-import { Select } from "@bismillah/ui";
+import { NativeSelect, NativeSelectOption } from "@bismillah/ui/components/native-select";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type ChangeEvent, useState } from "react";
@@ -32,20 +32,20 @@ export function OrganizationSwitcher() {
   if (!organizations) return null;
 
   return (
-    <Select
+    <NativeSelect
       aria-label="Organization"
-      className="h-8 max-w-48"
+      className="max-w-48"
       value={active?.id ?? ""}
       disabled={pending}
       onChange={onChange}
     >
-      {!active && <option value="">No organization</option>}
+      {!active && <NativeSelectOption value="">No organization</NativeSelectOption>}
       {organizations.map((org) => (
-        <option key={org.id} value={org.id}>
+        <NativeSelectOption key={org.id} value={org.id}>
           {org.name}
-        </option>
+        </NativeSelectOption>
       ))}
-      <option value={CREATE}>+ New organization</option>
-    </Select>
+      <NativeSelectOption value={CREATE}>+ New organization</NativeSelectOption>
+    </NativeSelect>
   );
 }

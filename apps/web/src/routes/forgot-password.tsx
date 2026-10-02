@@ -1,4 +1,4 @@
-import { Card, CardDescription, CardTitle } from "@bismillah/ui";
+import { Card, CardDescription, CardHeader, CardTitle } from "@bismillah/ui/components/card";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AuthForm } from "../components/auth-form.tsx";
@@ -14,12 +14,14 @@ function ForgotPassword() {
 
   if (sentTo) {
     return (
-      <Card className="mx-auto flex w-full max-w-sm flex-col gap-1">
-        <CardTitle>Check your email</CardTitle>
-        <CardDescription>
-          If {sentTo} has an account, a link to reset its password is on its way. The link expires
-          in 1 hour.
-        </CardDescription>
+      <Card className="mx-auto w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Check your email</CardTitle>
+          <CardDescription>
+            If {sentTo} has an account, a link to reset its password is on its way. The link expires
+            in 1 hour.
+          </CardDescription>
+        </CardHeader>
       </Card>
     );
   }

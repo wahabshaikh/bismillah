@@ -1,4 +1,4 @@
-import { Card, CardDescription, CardTitle } from "@bismillah/ui";
+import { Card, CardDescription, CardHeader, CardTitle } from "@bismillah/ui/components/card";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { AuthForm } from "../components/auth-form.tsx";
 import { authClient } from "../lib/auth.ts";
@@ -18,15 +18,17 @@ function ResetPassword() {
 
   if (!token) {
     return (
-      <Card className="mx-auto flex w-full max-w-sm flex-col gap-1">
-        <CardTitle>This link has expired</CardTitle>
-        <CardDescription>
-          Reset links work once, for 1 hour.{" "}
-          <Link to="/forgot-password" className="text-primary hover:underline">
-            Send a new one
-          </Link>
-          .
-        </CardDescription>
+      <Card className="mx-auto w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>This link has expired</CardTitle>
+          <CardDescription>
+            Reset links work once, for 1 hour.{" "}
+            <Link to="/forgot-password" className="text-primary hover:underline">
+              Send a new one
+            </Link>
+            .
+          </CardDescription>
+        </CardHeader>
       </Card>
     );
   }

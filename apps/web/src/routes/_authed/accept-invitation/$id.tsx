@@ -1,4 +1,12 @@
-import { Alert, Button, Card, CardDescription, CardTitle } from "@bismillah/ui";
+import { Alert, AlertDescription } from "@bismillah/ui/components/alert";
+import { Button } from "@bismillah/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@bismillah/ui/components/card";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -53,16 +61,18 @@ function AcceptInvitation() {
 
   if (invitation.error || !invitation.data) {
     return (
-      <Card className="mx-auto flex w-full max-w-sm flex-col gap-1">
-        <CardTitle>Invitation not found</CardTitle>
-        <CardDescription>
-          It may have expired or been cancelled, or it was sent to an address other than{" "}
-          {user.email}. Ask for a new one, or{" "}
-          <Link to="/dashboard" className="text-primary hover:underline">
-            go to your dashboard
-          </Link>
-          .
-        </CardDescription>
+      <Card className="mx-auto w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>Invitation not found</CardTitle>
+          <CardDescription>
+            It may have expired or been cancelled, or it was sent to an address other than{" "}
+            {user.email}. Ask for a new one, or{" "}
+            <Link to="/dashboard" className="text-primary hover:underline">
+              go to your dashboard
+            </Link>
+            .
+          </CardDescription>
+        </CardHeader>
       </Card>
     );
   }
@@ -70,26 +80,32 @@ function AcceptInvitation() {
   const { organizationName, inviterEmail, role } = invitation.data;
 
   return (
-    <Card className="mx-auto flex w-full max-w-sm flex-col gap-4">
-      <div className="flex flex-col gap-1">
+    <Card className="mx-auto w-full max-w-sm">
+      <CardHeader>
         <CardTitle>Join {organizationName}</CardTitle>
         <CardDescription>
           {inviterEmail} invited you to join as {role === "admin" ? "an admin" : `a ${role}`}.
         </CardDescription>
-      </div>
-      {error && <Alert>{error}</Alert>}
-      <div className="flex gap-2">
-        <Button onClick={() => respond("accept")} disabled={pending !== undefined}>
-          {pending === "accept" ? "Joining…" : "Accept"}
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={() => respond("reject")}
-          disabled={pending !== undefined}
-        >
-          Decline
-        </Button>
-      </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <div className="flex gap-2">
+          <Button onClick={() => respond("accept")} disabled={pending !== undefined}>
+            {pending === "accept" ? "Joining…" : "Accept"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => respond("reject")}
+            disabled={pending !== undefined}
+          >
+            Decline
+          </Button>
+        </div>
+      </CardContent>
     </Card>
   );
 }

@@ -30,7 +30,7 @@ to `.env.local` and set `VITE_API_URL`.
 | API client             | `src/lib/api.ts`                 | `api.uploads.$get(...)`, fully typed, sends credentials  |
 | Auth client            | `src/lib/auth.ts`                | Better Auth's React client, pointed at the API           |
 | Signed-in pages        | `src/routes/_authed.tsx`         | Redirects to `/sign-in`; rendered in the browser (below) |
-| Styles                 | `src/styles.css`                 | Tailwind CSS v4 + `@bismillah/ui/theme.css`              |
+| Styles + components    | `@bismillah/ui`                  | shadcn/ui on Tailwind CSS v4; see below                  |
 
 **Why signed-in pages skip SSR.** The session cookie is set by the API origin, so the web
 Worker never sees it and can't render a user's data on the server. The `_authed` layout sets
@@ -41,6 +41,24 @@ Public pages are fully server-rendered.
 both are on the same site: `localhost:3000` and `localhost:8787` locally, and sibling
 subdomains such as `app.example.com` and `api.example.com` in production. Two unrelated
 domains (or two `*.workers.dev` subdomains, which are separate sites) won't work.
+
+## Adding shadcn/ui components
+
+The app uses [shadcn/ui](https://ui.shadcn.com) in its
+[monorepo setup](https://ui.shadcn.com/docs/monorepo): `components.json` here and in
+[`packages/ui`](../../packages/ui) tell the CLI where everything goes. Run it from this folder:
+
+```sh
+pnpm dlx shadcn@latest add dialog
+pnpm format   # from the repo root: Biome reformats the generated code
+```
+
+Primitives such as `dialog` land in `packages/ui/src/components/`, and blocks such as
+`login-01` land in `src/components/` here, importing primitives from the shared package:
+
+```tsx
+import { Button } from "@bismillah/ui/components/button";
+```
 
 ## Deploying
 
